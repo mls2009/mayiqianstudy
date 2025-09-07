@@ -96,6 +96,57 @@ let totalScore = 0;
 let currentUser = '马亦谦';
 let statsFilterType = null; // null | 'positive' | 'negative'
 
+// ---- API integration start ----
+const API_BASE = 'https://score-api.malisi2009.workers.dev';
+const FIXED_USER_ID = 'default';
+const USE_API = true;
+let cachedRecords = [];
+
+async function apiAddRecord(record) {
+	const res = await fetch(`${API_BASE}/api/records`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(record)
+	});
+	if (!res.ok) throw new Error('add record failed');
+	return res.json();
+}
+
+async function apiGetRecords(userId = FIXED_USER_ID, period = 'all') {
+	const res = await fetch(`${API_BASE}/api/records?userId=${encodeURIComponent(userId)}&period=${period}`);
+	if (!res.ok) throw new Error('get records failed');
+	return res.json();
+}
+
+async function apiGetOverview(userId = FIXED_USER_ID) {
+	const res = await fetch(`${API_BASE}/api/stats/overview?userId=${encodeURIComponent(userId)}`);
+	if (!res.ok) throw new Error('get overview failed');
+	return res.json();
+}
+
+async function loadRecordsFromAPI() {
+	cachedRecords = await apiGetRecords(FIXED_USER_ID, 'all');
+}
+
+async function refreshAllViews() {
+	await loadRecordsFromAPI();
+	renderRecords();
+	updateScore();
+	updateRewardCard();
+	if (currentTab === 'stats') {
+		renderStats();
+	}
+}
+
+function getAllRecords() {
+	if (USE_API) return cachedRecords;
+	// fallback to localStorage (legacy)
+	const currentUser = localStorage.getItem('currentUser') || '马亦谦';
+	const userKey = `${currentUser}_records`;
+	return JSON.parse(localStorage.getItem(userKey) || '[]');
+}
+// ---- API integration end ----
+
 // 初始化应用
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
@@ -116,6 +167,11 @@ function initializeApp() {
     
     // 更新用户显示
     updateUserDisplay();
+    
+    // 使用服务端数据刷新
+    if (USE_API) {
+        refreshAllViews().catch(console.error);
+    }
 }
 
 // 检查并处理跨天逻辑
@@ -325,16 +381,11 @@ function renderRecords() {
         return;
     }
     
-    // 获取当前用户的记录
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const allRecords = JSON.parse(localStorage.getItem(userKey) || '[]');
+    // 获取记录
+    const allRecords = getAllRecords();
     
     const today = getBeijingDateString();
-    const todayRecords = allRecords.filter(record => {
-        // 统一使用record.date与北京时间字符串对比
-        return record.date === today;
-    });
+    const todayRecords = allRecords.filter(record => record.date === today);
     
     if (todayRecords.length === 0) {
         recordsList.innerHTML = `
@@ -369,10 +420,8 @@ function renderRecords() {
 }
 
 function updateScore(isPositive = null) {
-    // 获取当前用户的记录
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const allRecords = JSON.parse(localStorage.getItem(userKey) || '[]');
+    // 使用统一数据源
+    const allRecords = getAllRecords();
     
     // 计算今日得分（统一使用北京时间字符串）
     const today = getBeijingDateString();
@@ -380,9 +429,8 @@ function updateScore(isPositive = null) {
         .filter(record => record.date === today)
         .reduce((sum, record) => sum + (record.score || 0), 0);
     
-    // 获取总得分
-    const totalScoreKey = `${currentUser}_totalScore`;
-    const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
+    // 总得分改为聚合计算
+    const totalScore = allRecords.reduce((sum, r) => sum + (r.score || 0), 0);
     
     // 更新显示
     const todayScoreElement = document.getElementById('todayScore');
@@ -409,10 +457,8 @@ function updateScore(isPositive = null) {
 }
 
 function updateRewardCard() {
-    // 获取当前用户的记录
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const allRecords = JSON.parse(localStorage.getItem(userKey) || '[]');
+    // 使用统一数据源
+    const allRecords = getAllRecords();
     
     // 计算今日得分（统一使用北京时间字符串）
     const today = getBeijingDateString();
@@ -539,18 +585,16 @@ function renderStats() {
 }
 
 function renderStatsOverview() {
-    // 获取当前用户的记录
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const allRecords = JSON.parse(localStorage.getItem(userKey) || '[]');
+    // 使用统一数据源
+    const allRecords = getAllRecords();
     
-    console.log('统计数据 - 用户:', currentUser, '总记录数:', allRecords.length);
+    console.log('统计数据 - 统一数据源记录数:', allRecords.length);
     
     const periodRecords = getRecordsByPeriod(currentPeriod, allRecords);
     console.log('筛选后记录数:', periodRecords.length, '周期:', currentPeriod);
     const days = getUniqueDays(periodRecords);
-    const totalScore = periodRecords.reduce((sum, record) => sum + (record.score || 0), 0);
-    const avgScore = days.length > 0 ? Math.round(totalScore / days.length * 10) / 10 : 0;
+    const totalScoreAgg = periodRecords.reduce((sum, record) => sum + (record.score || 0), 0);
+    const avgScore = days.length > 0 ? Math.round(totalScoreAgg / days.length * 10) / 10 : 0;
     const rewardDays = days.filter(day => {
         const dayRecords = periodRecords.filter(record => record.date === day);
         const dayScore = dayRecords.reduce((sum, record) => sum + (record.score || 0), 0);
@@ -575,16 +619,14 @@ function renderStatsOverview() {
 }
 
 function renderBehaviorStats() {
-    // 获取当前用户的记录
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const allRecords = JSON.parse(localStorage.getItem(userKey) || '[]');
+    // 使用统一数据源
+    const allRecords = getAllRecords();
     
-    const records = getRecordsByPeriod(currentPeriod, allRecords);
+    const periodRecords = getRecordsByPeriod(currentPeriod, allRecords);
     const behaviorStats = {};
     
     // 统计每个行为的次数和总分
-    records.forEach(record => {
+    periodRecords.forEach(record => {
         if (!behaviorStats[record.behaviorName]) {
             behaviorStats[record.behaviorName] = {
                 count: 0,
@@ -623,10 +665,8 @@ function renderDailyTrend() {
     
     if (!trendChart) return;
     
-    // 获取当前用户的记录
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const allRecords = JSON.parse(localStorage.getItem(userKey) || '[]');
+    // 使用统一数据源
+    const allRecords = getAllRecords();
     
     // 以北京时间为基准获取最近7天的日期字符串（包括今天）
     const last7Days = [];
@@ -762,11 +802,9 @@ function getBeijingDateString() {
 }
 
 function getRecordsByPeriod(period, userRecords = null) {
-    // 如果没有传入记录，获取当前用户的记录
+    // 统一数据源
     if (!userRecords) {
-        const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-        const userKey = `${currentUser}_records`;
-        userRecords = JSON.parse(localStorage.getItem(userKey) || '[]');
+        userRecords = getAllRecords();
     }
     
     const now = getBeijingTime();
@@ -1163,8 +1201,7 @@ document.addEventListener('keydown', function(e) {
 
 // 获取今日某个子项目的使用次数
 function getTodayItemCount(categoryKey, itemIndex) {
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const records = JSON.parse(localStorage.getItem(`${currentUser}_records`) || '[]');
+    const records = getAllRecords();
     const today = getBeijingDateString();
     
     return records.filter(record => {
@@ -1196,38 +1233,19 @@ function addPositiveBehavior(categoryKey, itemIndex) {
     // 创建记录对象（统一使用北京时间字符串）
     const now = new Date();
     const record = {
-        id: Date.now(),
-        behaviorId: Date.now(),
+        userId: FIXED_USER_ID,
         behaviorName: `${category.name} - ${item.name}`,
         score: item.score,
         timestamp: now.toISOString(),
         date: getBeijingDateString(),
         category: categoryKey,
-        itemIndex: itemIndex,
-        type: 'positive'
+        itemIndex: itemIndex
     };
     
-    // 获取当前用户数据
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const records = JSON.parse(localStorage.getItem(userKey) || '[]');
-    
-    // 添加记录
-    records.unshift(record);
-    localStorage.setItem(userKey, JSON.stringify(records));
-    
-    // 更新总分
-    const totalScoreKey = `${currentUser}_totalScore`;
-    const currentTotal = parseInt(localStorage.getItem(totalScoreKey) || '0');
-    localStorage.setItem(totalScoreKey, (currentTotal + item.score).toString());
-    
-    // 更新界面
-    updateScore();
-    renderRecords();
-    updateRewardCard();
-    if (currentTab === 'stats') {
-        renderStats();
-    }
+    // 写到服务端
+    apiAddRecord(record)
+        .then(() => refreshAllViews())
+        .catch(console.error);
     
     // 添加动画效果到触发的按钮
     const categoryButtons = document.querySelectorAll('.action-btn.positive');
@@ -1254,7 +1272,7 @@ function addPositiveBehavior(categoryKey, itemIndex) {
     const message = messages[Math.floor(Math.random() * messages.length)];
     showEncouragementMessage('positive', message);
     
-    console.log('记录添加成功:', record);
+    console.log('记录添加成功(服务端):', record);
 }
 
 // 添加负面行为记录
@@ -1270,28 +1288,18 @@ function addNegativeBehavior(index) {
     // 创建记录对象（统一使用北京时间字符串）
     const now = new Date();
     const record = {
-        id: Date.now(),
-        behaviorId: Date.now(),
+        userId: FIXED_USER_ID,
         behaviorName: behavior.name,
         score: behavior.score,
         timestamp: now.toISOString(),
         date: getBeijingDateString(),
         category: 'negative',
-        itemIndex: index,
-        type: 'negative'
+        itemIndex: index
     };
     
-    // 保存记录到localStorage
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const records = JSON.parse(localStorage.getItem(userKey) || '[]');
-    records.push(record);
-    localStorage.setItem(userKey, JSON.stringify(records));
-    
-    // 更新总得分
-    const totalScoreKey = `${currentUser}_totalScore`;
-    const currentTotal = parseInt(localStorage.getItem(totalScoreKey) || '0');
-    localStorage.setItem(totalScoreKey, (currentTotal + behavior.score).toString());
+    apiAddRecord(record)
+        .then(() => refreshAllViews())
+        .catch(console.error);
     
     // 添加动画效果
     const buttons = document.querySelectorAll('.action-btn.negative');
@@ -1312,15 +1320,7 @@ function addNegativeBehavior(index) {
     const message = messages[Math.floor(Math.random() * messages.length)];
     showEncouragementMessage('negative', message);
     
-    // 更新界面
-    updateScore();
-    renderRecords();
-    updateRewardCard();
-    if (currentTab === 'stats') {
-        renderStats();
-    }
-    
-    console.log('负面行为记录已添加:', record);
+    console.log('负面行为记录已添加(服务端):', record);
 }
 
 // 快速切换用户函数

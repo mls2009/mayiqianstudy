@@ -135,6 +135,22 @@ async function apiGetStats(userId = FIXED_USER_ID, period = 'all') {
 	if (!res.ok) throw new Error('get stats failed');
 	return res.json();
 }
+
+async function apiClearAll(userId) {
+	const res = await fetch(`${API_BASE}/api/records/clear`, {
+		method: 'POST', headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ userId })
+	});
+	if (!res.ok) throw new Error('clear failed');
+}
+
+async function apiResetToday(userId, date) {
+	const res = await fetch(`${API_BASE}/api/records/reset-today`, {
+		method: 'POST', headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ userId, date })
+	});
+	if (!res.ok) throw new Error('reset-today failed');
+}
 // ---- API integration end ----
 
 // 统一数据获取与刷新（缺失补齐）
@@ -956,17 +972,31 @@ function setTotalScore() {
         return;
     }
     
-    // 获取当前用户并更新总分
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const totalScoreKey = `${currentUser}_totalScore`;
-    localStorage.setItem(totalScoreKey, newScore.toString());
-    
-    // 更新界面
-    updateScore();
-    updateRewardCard();
-    
-    input.value = '';
-    showEncouragementMessage('positive', `总得分已设置为${newScore}分！`);
+    // 用“手动调整”记录把总分拉到目标值
+    const all = getAllRecords();
+    const currentTotal = all.reduce((s, r) => s + (r.score || 0), 0);
+    const delta = newScore - currentTotal;
+    if (delta === 0) {
+        showEncouragementMessage('positive', `总得分已是${newScore}分！`);
+        return;
+    }
+    const now = new Date();
+    const record = {
+        userId: currentUser || FIXED_USER_ID,
+        behaviorName: '手动调整总分',
+        score: delta,
+        timestamp: now.toISOString(),
+        date: getBeijingDateString(),
+        category: 'adjust',
+        itemIndex: null
+    };
+    apiAddRecord(record)
+        .then(() => refreshAllViews())
+        .then(() => {
+            input.value = '';
+            showEncouragementMessage('positive', `总得分已设置为${newScore}分！`);
+        })
+        .catch((e) => showEncouragementMessage('info', `设置失败：${e.message}`));
 }
 
 // 确认弹窗相关变量
@@ -999,110 +1029,41 @@ function clearAllData() {
         '清空所有记录',
         '确定要清空所有记录吗？此操作不可恢复！',
         function() {
-            // 获取当前用户
-            const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-            const recordsKey = `${currentUser}_records`;
-            const totalScoreKey = `${currentUser}_totalScore`;
-            
-            // 清空当前用户的记录和总分
-            localStorage.setItem(recordsKey, '[]');
-            localStorage.setItem(totalScoreKey, '0');
-            
-            // 更新界面
-            renderRecords();
-            updateScore();
-            updateRewardCard();
-            
-            if (currentTab === 'stats') {
-                renderStats();
-            }
-            
-            showEncouragementMessage('info', '所有记录已清空！');
+            const uid = currentUser || FIXED_USER_ID;
+            apiClearAll(uid)
+                .then(() => refreshAllViews())
+                .then(() => showEncouragementMessage('info', '所有记录已清空！'))
+                .catch(e => showEncouragementMessage('info', `清空失败：${e.message}`));
         }
     );
 }
 
 function resetTodayScore() {
     const today = getBeijingDateString();
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const recordsKey = `${currentUser}_records`;
-    const totalScoreKey = `${currentUser}_totalScore`;
-    
-    // 获取当前用户的记录
-    let records = JSON.parse(localStorage.getItem(recordsKey) || '[]');
-    const todayRecords = records.filter(record => record.date === today);
-    
-    if (todayRecords.length === 0) {
-        showEncouragementMessage('info', '今天还没有记录！');
-        return;
-    }
-    
-    showConfirmModal(
-        '重置今日得分',
-        '确定要重置今日得分吗？这将删除今天的所有记录。',
-        function() {
-            // 只删除今日记录，不影响总得分
-            records = records.filter(record => record.date !== today);
-            
-            // 保存更新后的记录（总得分保持不变）
-            localStorage.setItem(recordsKey, JSON.stringify(records));
-            
-            // 更新界面
-            renderRecords();
-            updateScore();
-            updateRewardCard();
-            
-            showEncouragementMessage('info', '今日得分已重置！总得分保持不变。');
-        }
-    );
+    const uid = currentUser || FIXED_USER_ID;
+    apiResetToday(uid, today)
+        .then(() => refreshAllViews())
+        .then(() => showEncouragementMessage('info', '今日得分已重置！总得分保持不变。'))
+        .catch(e => showEncouragementMessage('info', `重置失败：${e.message}`));
 }
 
 // 用户管理功能
 function switchUser(userName) {
-    console.log('切换用户到:', userName); // 调试用
-    
+    console.log('切换用户到:', userName);
     if (userName === currentUser) {
         showEncouragementMessage('info', `当前已是${userName}！`);
         return;
     }
-    
-    // 保存当前用户数据
-    saveData();
-    
-    // 切换到新用户
     currentUser = userName;
-    
-    // 加载新用户数据
-    const userKey = `user_${currentUser}`;
-    const userData = localStorage.getItem(userKey);
-    
-    if (userData) {
-        const data = JSON.parse(userData);
-        behaviors = data.behaviors || defaultBehaviors;
-        records = data.records || [];
-        totalScore = data.totalScore || 0;
-    } else {
-        behaviors = [...defaultBehaviors];
-        records = [];
-        totalScore = 0;
-    }
-    
-    // 保存新的当前用户
     localStorage.setItem('currentUser', currentUser);
-    
-    // 重新渲染界面 - 移除renderBehaviors调用
-    renderRecords();
-    updateScore();
-    updateRewardCard();
     updateUserDisplay();
-    
-    // 如果在统计页面，重新渲染统计
-    if (currentTab === 'stats') {
-        renderStats();
-    }
-    
-    // 显示切换成功消息
-    showEncouragementMessage('positive', `已切换到${userName}！`);
+    refreshAllViews().then(() => {
+        renderRecords();
+        updateScore();
+        updateRewardCard();
+        if (currentTab === 'stats') renderStats();
+        showEncouragementMessage('positive', `已切换到${userName}！`);
+    }).catch(console.error);
 }
 
 function quickSwitchUser() {

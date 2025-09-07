@@ -71,6 +71,18 @@ export default {
 				return json(results);
 			}
 
+			if (request.method === "POST" && url.pathname === "/api/records/clear") {
+				const { userId = "default" } = await request.json();
+				await env.DB.prepare("DELETE FROM records WHERE user_id = ?").bind(userId).run();
+				return ok("cleared");
+			}
+
+			if (request.method === "POST" && url.pathname === "/api/records/reset-today") {
+				const { userId = "default", date } = await request.json();
+				await env.DB.prepare("DELETE FROM records WHERE user_id = ? AND date = ?").bind(userId, date).run();
+				return ok("reset-today");
+			}
+
 			if (request.method === "GET" && url.pathname === "/api/stats/overview") {
 				const userId = url.searchParams.get("userId") || "default";
 				const { results } = await env.DB.prepare(

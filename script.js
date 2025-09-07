@@ -97,7 +97,7 @@ let currentUser = '马亦谦';
 let statsFilterType = null; // null | 'positive' | 'negative'
 
 // ---- API integration start ----
-const API_BASE = 'https://score-api.malisi2009.workers.dev';
+const API_BASE = 'https://api.mayiqian.top';
 const FIXED_USER_ID = 'default';
 const USE_API = true;
 let cachedRecords = [];
@@ -118,32 +118,10 @@ async function apiGetRecords(userId = FIXED_USER_ID, period = 'all') {
 	return res.json();
 }
 
-async function apiGetOverview(userId = FIXED_USER_ID) {
-	const res = await fetch(`${API_BASE}/api/stats/overview?userId=${encodeURIComponent(userId)}`);
-	if (!res.ok) throw new Error('get overview failed');
+async function apiGetStats(userId = FIXED_USER_ID, period = 'all') {
+	const res = await fetch(`${API_BASE}/api/stats?userId=${encodeURIComponent(userId)}&period=${period}`);
+	if (!res.ok) throw new Error('get stats failed');
 	return res.json();
-}
-
-async function loadRecordsFromAPI() {
-	cachedRecords = await apiGetRecords(FIXED_USER_ID, 'all');
-}
-
-async function refreshAllViews() {
-	await loadRecordsFromAPI();
-	renderRecords();
-	updateScore();
-	updateRewardCard();
-	if (currentTab === 'stats') {
-		renderStats();
-	}
-}
-
-function getAllRecords() {
-	if (USE_API) return cachedRecords;
-	// fallback to localStorage (legacy)
-	const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-	const userKey = `${currentUser}_records`;
-	return JSON.parse(localStorage.getItem(userKey) || '[]');
 }
 // ---- API integration end ----
 

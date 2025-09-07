@@ -1227,7 +1227,7 @@ function addPositiveBehavior(categoryKey, itemIndex) {
     // 检查次数限制
     const todayCount = getTodayItemCount(categoryKey, itemIndex);
     if (item.dailyLimit && todayCount >= item.dailyLimit) {
-        showFloatingMessage('今日次数已达上限！', 'warning');
+        showEncouragementMessage('今日次数已达上限！', 'warning');
         return;
     }
     
@@ -1333,7 +1333,7 @@ function quickSwitchUser() {
     switchUser(newUser);
     
     // 显示切换提示
-    showFloatingMessage(`已切换到 ${newUser}`, 'info');
+    showEncouragementMessage(`已切换到 ${newUser}`, 'info');
 }
 
 // 全局滚动锁定工具

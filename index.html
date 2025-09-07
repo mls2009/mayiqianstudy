@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>马亦谦行为打分系统</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
+    <div class="container">
+        <!-- 首页内容 -->
+        <div class="page-content" id="homePage">
+            <!-- 头部 -->
+            <header class="header">
+                <h1 id="headerTitle" onclick="quickSwitchUser()">马亦谦的表现</h1>
+                <div class="score-display">
+                    <div class="score-item">
+                        <span class="score-label">今日得分</span>
+                        <span class="score-value" id="todayScore">0</span>
+                    </div>
+                    <div class="score-divider">|</div>
+                    <div class="score-item">
+                        <span class="score-label">总得分</span>
+                        <span class="score-value total" id="totalScore">0</span>
+                    </div>
+                </div>
+            </header>
+
+        <!-- 快速打分区域 -->
+        <section class="quick-actions">
+            
+            <!-- 正面行为 -->
+            <div class="behavior-section">
+                <div class="action-grid">
+                    <button class="action-btn positive" onclick="openBehaviorModal('eating')">🍽️ 乖乖吃饭</button>
+                    <button class="action-btn positive" onclick="openBehaviorModal('studying')">📚 好好学习</button>
+                    <button class="action-btn positive" onclick="openBehaviorModal('sleeping')">😴 按时睡觉</button>
+                    <button class="action-btn positive" onclick="openBehaviorModal('exercise')">🏃 多做运动</button>
+                </div>
+            </div>
+
+            <!-- 负面行为 -->
+            <div class="behavior-section">
+                <div class="action-grid">
+                    <button class="action-btn negative" onclick="addNegativeBehavior(0)">😠 欺负兄弟</button>
+                    <button class="action-btn negative" onclick="addNegativeBehavior(1)">🌙 10点还不睡</button>
+                    <button class="action-btn negative" onclick="addNegativeBehavior(2)">😡 乱发脾气</button>
+                    <button class="action-btn negative" onclick="addNegativeBehavior(3)">🚶 吃饭离开座位</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 自定义打分按钮 -->
+        <section class="custom-scoring">
+            <button class="custom-score-btn" onclick="showCustomScoreModal()">
+                <span class="custom-icon">✏️</span>
+                <span class="custom-text">自定义打分</span>
+            </button>
+        </section>
+
+        <!-- 奖励查看区域 -->
+        <section class="reward-section">
+            <div class="reward-card" id="rewardCard" onclick="checkTodayReward()">
+                <div class="reward-icon">🎁</div>
+                <div class="reward-info">
+                    <div class="reward-title">今日奖励</div>
+                    <div class="reward-status" id="rewardStatus">点击查看</div>
+                </div>
+                <div class="reward-arrow">→</div>
+            </div>
+        </section>
+
+        <!-- 今日记录 -->
+        <section class="today-records">
+            <h2>今日记录</h2>
+            <div class="records-list" id="recordsList">
+                <div class="empty-state">
+                    <p>今天还没有记录哦～</p>
+                </div>
+            </div>
+        </section>
+        </div>
+
+        <!-- 奖励提醒 -->
+        <div class="reward-modal" id="rewardModal">
+            <div class="modal-content">
+                <div class="reward-icon">🎉</div>
+                <h3>恭喜马亦谦！</h3>
+                <p>今天表现很棒，获得了看电视一集的奖励！</p>
+                <button class="modal-btn" onclick="closeRewardModal()">太棒了！</button>
+            </div>
+        </div>
+
+        <!-- 自定义打分弹窗 -->
+        <div class="custom-modal" id="customModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>自定义打分</h3>
+                    <button class="close-btn" onclick="closeCustomModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <label>行为描述</label>
+                        <input type="text" id="customBehaviorInput" placeholder="输入行为描述..." maxlength="15">
+                    </div>
+                    <div class="input-group">
+                        <label>分值</label>
+                        <input type="number" id="customScoreInput" placeholder="输入分值（如：+2 或 -1）" min="-10" max="10">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn secondary" onclick="closeCustomModal()">取消</button>
+                    <button class="modal-btn primary" onclick="submitCustomScore()">确定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 确认删除弹窗 -->
+        <div class="confirm-modal" id="confirmModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="confirmTitle">确认操作</h3>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmMessage">确定要执行此操作吗？</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn secondary" onclick="closeConfirmModal()">取消</button>
+                    <button class="modal-btn danger" id="confirmBtn" onclick="executeConfirmAction()">确定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计页面 -->
+        <div class="page-content" id="statsPage" style="display: none;">
+            <header class="stats-header">
+                <h1>📊 表现统计</h1>
+            </header>
+
+            <!-- 时间选择器 -->
+            <section class="time-selector">
+                <div class="selector-buttons">
+                    <button class="time-btn active" data-period="week">本周</button>
+                    <button class="time-btn" data-period="month">本月</button>
+                    <button class="time-btn" data-period="all">全部</button>
+                </div>
+            </section>
+
+            <!-- 总体统计 -->
+            <section class="stats-overview">
+                <div class="stats-card">
+                    <div class="stats-icon">📈</div>
+                    <div class="stats-info">
+                        <div class="stats-value" id="totalDays">0</div>
+                        <div class="stats-label">记录天数</div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-icon">⭐</div>
+                    <div class="stats-info">
+                        <div class="stats-value" id="avgScore">0</div>
+                        <div class="stats-label">平均得分</div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-icon">🎁</div>
+                    <div class="stats-info">
+                        <div class="stats-value" id="rewardDays">0</div>
+                        <div class="stats-label">奖励天数</div>
+                    </div>
+                </div>
+                <div class="stats-card" id="totalPositiveCard" onclick="openStatsRecordsModal('positive')">
+                    <div class="stats-icon">➕</div>
+                    <div class="stats-info">
+                        <div class="stats-value" id="totalPositiveScore">0</div>
+                        <div class="stats-label">总共得分</div>
+                    </div>
+                </div>
+                <div class="stats-card" id="totalNegativeCard" onclick="openStatsRecordsModal('negative')">
+                    <div class="stats-icon">➖</div>
+                    <div class="stats-info">
+                        <div class="stats-value" id="totalNegativeScore">0</div>
+                        <div class="stats-label">总共失分</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 行为统计 -->
+            <section class="behavior-stats">
+                <h3>行为统计</h3>
+                <div class="behavior-list" id="behaviorStatsList">
+                    <!-- 动态生成 -->
+                </div>
+            </section>
+
+            <!-- 记录明细弹窗（替代内联列表） -->
+            <div class="modal-overlay" id="statsRecordsModal" style="display: none;">
+                <div class="modal-content behavior-modal" tabindex="-1">
+                    <div class="modal-header">
+                        <h3 id="statsRecordsTitle">记录</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="records-list" id="statsRecordsList">
+                            <!-- 动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 每日得分趋势 -->
+            <section class="daily-trend">
+                <h3>每日得分</h3>
+                <div class="trend-chart" id="trendChart">
+                    <!-- 动态生成 -->
+                </div>
+            </section>
+        </div>
+
+        <!-- 设置页面 -->
+        <div class="page-content" id="settingsPage" style="display: none;">
+            <header class="settings-header">
+                <h1>⚙️ 设置</h1>
+            </header>
+            
+            <section class="settings-section">
+                <h3>用户管理</h3>
+                <div class="setting-item">
+                    <label>当前用户</label>
+                    <div class="setting-value">
+                        <span id="currentUser">马亦谦</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>切换用户</label>
+                    <div class="setting-action">
+                        <button class="user-btn" onclick="switchUser('马亦谦')">马亦谦</button>
+                        <button class="user-btn" onclick="switchUser('马熠初')">马熠初</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>总得分管理</h3>
+                <div class="setting-item">
+                    <label>当前总得分</label>
+                    <div class="setting-value">
+                        <span id="currentTotalScore">0</span>分
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>设置总得分</label>
+                    <div class="setting-input">
+                        <input type="number" id="totalScoreInput" placeholder="输入新的总得分">
+                        <button onclick="setTotalScore()">确定</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>数据管理</h3>
+                <div class="setting-item">
+                    <label>清空所有记录</label>
+                    <div class="setting-action">
+                        <button class="danger-btn" onclick="clearAllData()">清空记录</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>重置今日得分</label>
+                    <div class="setting-action">
+                        <button onclick="resetTodayScore()">重置今日</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>关于</h3>
+                <div class="setting-item">
+                    <label>版本信息</label>
+                    <div class="setting-value">v1.0.0</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 行为选择弹窗 -->
+        <div class="modal-overlay" id="behaviorModal">
+            <div class="modal-content behavior-modal" tabindex="-1">
+                <div class="modal-header">
+                    <h3 id="behaviorModalTitle">选择具体行为</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="behavior-items" id="behaviorItems">
+                        <!-- 动态生成子项目按钮 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-tab="home">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">首页</span>
+            </button>
+            <button class="nav-btn" data-tab="stats">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">统计</span>
+            </button>
+            <button class="nav-btn" data-tab="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">设置</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

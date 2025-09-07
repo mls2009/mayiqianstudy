@@ -115,7 +115,18 @@ async function apiAddRecord(record) {
 async function apiGetRecords(userId = FIXED_USER_ID, period = 'all') {
 	const res = await fetch(`${API_BASE}/api/records?userId=${encodeURIComponent(userId)}&period=${period}`);
 	if (!res.ok) throw new Error('get records failed');
-	return res.json();
+	const data = await res.json();
+	// 规范后端返回（D1 为下划线命名）为前端使用的 camelCase
+	return (Array.isArray(data) ? data : []).map(r => ({
+		id: r.id || r.record_id || undefined,
+		userId: r.user_id || r.userId || FIXED_USER_ID,
+		behaviorName: r.behavior_name || r.behaviorName || r.behavior || '未知行为',
+		score: typeof r.score === 'number' ? r.score : Number(r.score || 0),
+		timestamp: r.timestamp || r.created_at || r.time || new Date().toISOString(),
+		date: r.date || (r.timestamp ? new Date(r.timestamp).toDateString() : undefined),
+		category: r.category || undefined,
+		itemIndex: r.item_index != null ? Number(r.item_index) : (r.itemIndex != null ? Number(r.itemIndex) : undefined)
+	}));
 }
 
 async function apiGetStats(userId = FIXED_USER_ID, period = 'all') {

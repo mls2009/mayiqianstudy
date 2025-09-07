@@ -95,6 +95,7 @@ let currentPeriod = 'week';
 let totalScore = 0;
 let currentUser = '马亦谦';
 let statsFilterType = null; // null | 'positive' | 'negative'
+let lastRenderedDate = null; // 用于跨天检测
 
 // ---- API integration start ----
 const API_BASE = 'https://api.mayiqian.top';
@@ -184,6 +185,30 @@ function initializeApp() {
     
     // 更新用户显示
     updateUserDisplay();
+    
+    // 设置跨天检测与前台刷新
+    lastRenderedDate = getBeijingDateString();
+    if (!window.__dailyRefreshTimer) {
+        window.__dailyRefreshTimer = setInterval(() => {
+            const today = getBeijingDateString();
+            if (today !== lastRenderedDate) {
+                lastRenderedDate = today;
+                refreshAllViews().catch(console.error);
+            }
+        }, 60 * 1000);
+    }
+    if (!window.__visibilityHooked) {
+        window.__visibilityHooked = true;
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                const today = getBeijingDateString();
+                if (today !== lastRenderedDate) {
+                    lastRenderedDate = today;
+                }
+                refreshAllViews().catch(console.error);
+            }
+        });
+    }
     
     // 使用服务端数据刷新
     if (USE_API) {

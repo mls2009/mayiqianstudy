@@ -113,14 +113,14 @@ async function apiAddRecord(record) {
 	return res.json();
 }
 
-async function apiGetRecords(userId = FIXED_USER_ID, period = 'all') {
+async function apiGetRecords(userId = currentUser || FIXED_USER_ID, period = 'all') {
 	const res = await fetch(`${API_BASE}/api/records?userId=${encodeURIComponent(userId)}&period=${period}`);
 	if (!res.ok) throw new Error('get records failed');
 	const data = await res.json();
 	// 规范后端返回（D1 为下划线命名）为前端使用的 camelCase
 	return (Array.isArray(data) ? data : []).map(r => ({
 		id: r.id || r.record_id || undefined,
-		userId: r.user_id || r.userId || FIXED_USER_ID,
+		userId: r.user_id || r.userId || (currentUser || FIXED_USER_ID),
 		behaviorName: r.behavior_name || r.behaviorName || r.behavior || '未知行为',
 		score: typeof r.score === 'number' ? r.score : Number(r.score || 0),
 		timestamp: r.timestamp || r.created_at || r.time || new Date().toISOString(),
@@ -156,7 +156,7 @@ async function apiResetToday(userId, date) {
 // 统一数据获取与刷新（缺失补齐）
 async function loadRecordsFromAPI() {
 	try {
-		cachedRecords = await apiGetRecords(FIXED_USER_ID, 'all');
+		cachedRecords = await apiGetRecords(currentUser || FIXED_USER_ID, 'all');
 	} catch (e) {
 		console.error('loadRecordsFromAPI失败:', e);
 		// 保底：不抛出，保持旧数据
@@ -1234,7 +1234,7 @@ function addPositiveBehavior(categoryKey, itemIndex) {
     // 创建记录对象（统一使用北京时间字符串）
     const now = new Date();
     const record = {
-        userId: FIXED_USER_ID,
+        userId: currentUser || FIXED_USER_ID,
         behaviorName: `${category.name} - ${item.name}`,
         score: item.score,
         timestamp: now.toISOString(),
@@ -1289,7 +1289,7 @@ function addNegativeBehavior(index) {
     // 创建记录对象（统一使用北京时间字符串）
     const now = new Date();
     const record = {
-        userId: FIXED_USER_ID,
+        userId: currentUser || FIXED_USER_ID,
         behaviorName: behavior.name,
         score: behavior.score,
         timestamp: now.toISOString(),

@@ -125,6 +125,34 @@ async function apiGetStats(userId = FIXED_USER_ID, period = 'all') {
 }
 // ---- API integration end ----
 
+// 统一数据获取与刷新（缺失补齐）
+async function loadRecordsFromAPI() {
+	try {
+		cachedRecords = await apiGetRecords(FIXED_USER_ID, 'all');
+	} catch (e) {
+		console.error('loadRecordsFromAPI失败:', e);
+		// 保底：不抛出，保持旧数据
+	}
+}
+
+async function refreshAllViews() {
+	await loadRecordsFromAPI();
+	renderRecords();
+	updateScore();
+	updateRewardCard();
+	if (currentTab === 'stats') {
+		renderStats();
+	}
+}
+
+function getAllRecords() {
+	if (USE_API) return cachedRecords;
+	// 本地回退：使用 localStorage 旧数据
+	const lsUser = localStorage.getItem('currentUser') || '马亦谦';
+	const userKey = `${lsUser}_records`;
+	return JSON.parse(localStorage.getItem(userKey) || '[]');
+}
+
 // 初始化应用
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
@@ -698,10 +726,8 @@ function renderStatsRecords() {
     const listEl = document.getElementById('statsRecordsList');
     if (!listEl) return;
     
-    // 获取当前用户的记录
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const userKey = `${currentUser}_records`;
-    const allRecords = JSON.parse(localStorage.getItem(userKey) || '[]');
+    // 统一数据源
+    const allRecords = getAllRecords();
     const periodRecords = getRecordsByPeriod(currentPeriod, allRecords);
     
     // 根据筛选条件过滤

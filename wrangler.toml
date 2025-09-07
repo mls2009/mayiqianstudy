@@ -1,0 +1,8 @@
+name = "score-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "my-score-db"
+database_id = "95e14293-8140-4bd4-bd26-7d8f29f0a099" 

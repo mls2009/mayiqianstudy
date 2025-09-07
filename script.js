@@ -803,12 +803,12 @@ function closeStatsRecordsModal() {
     }
 }
 
-// 获取北京时间
+// 获取北京时间（修正：避免在东八区再次+8小时）
 function getBeijingTime() {
     const now = new Date();
-    // 转换为北京时间 (UTC+8)
-    const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
-    return beijingTime;
+    // 本地时间 + (8小时 + 本地到UTC的偏移分钟) → 北京时间
+    const minutesToAdd = (8 * 60) + now.getTimezoneOffset();
+    return new Date(now.getTime() + minutesToAdd * 60 * 1000);
 }
 
 // 获取北京时间的日期字符串

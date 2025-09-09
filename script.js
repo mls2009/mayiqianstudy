@@ -1,3 +1,4 @@
+// Version: 2025-09-09-fix-syntax-errors
 // 新的行为配置结构
 const behaviorConfig = {
     positive: {

@@ -1,4 +1,7 @@
 // Version: 2025-09-09-fix-syntax-errors
+// Version: 2025-09-09-fix-syntax-errors
+// Version: 2025-09-09-fix-syntax-errors
+// Version: 2025-09-09-fix-syntax-errors
 // 新的行为配置结构
 const behaviorConfig = {
     positive: {
@@ -210,12 +213,32 @@ function initializeApp() {
     checkAndResetDaily();
     
     // 加载数据
-    loadData();
-    
-    // 渲染界面 - 移除renderBehaviors，现在使用静态HTML
-    renderRecords();
-    updateScore();
-    updateRewardCard();
+    // 优先从API加载数据，然后渲染界面
+    if (USE_API) {
+        // 显示加载状态
+        showLoadingState();
+        refreshAllViews().then(() => {
+            // 数据加载完成后渲染界面
+            renderRecords();
+            updateScore();
+            updateRewardCard();
+            hideLoadingState();
+        }).catch((error) => {
+            console.error("API数据加载失败，使用本地数据:", error);
+            // API失败时回退到本地数据
+            loadData();
+            renderRecords();
+            updateScore();
+            updateRewardCard();
+            hideLoadingState();
+        });
+    } else {
+        // 不使用API时，使用本地数据
+        loadData();
+        renderRecords();
+        updateScore();
+        updateRewardCard();
+    }    updateRewardCard();
     
     // 更新用户显示
     updateUserDisplay();
@@ -1424,4 +1447,31 @@ function updateRewardCard() {
             rewardStatus.textContent = `还需要${needed}分才能看电视`;
         }
     }).catch(console.error);
+}
+
+// 添加加载状态显示函数
+function showLoadingState() {
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loadingState';
+    loadingDiv.innerHTML = '正在加载数据...';
+    loadingDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 9999;
+        font-size: 16px;
+    `;
+    document.body.appendChild(loadingDiv);
+}
+
+function hideLoadingState() {
+    const loadingDiv = document.getElementById('loadingState');
+    if (loadingDiv) {
+        loadingDiv.remove();
+    }
 }

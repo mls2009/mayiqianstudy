@@ -1348,7 +1348,7 @@ function quickSwitchUser() {
     switchUser(newUser);
     
     // 显示切换提示
-    showEncouragementMessage(`已切换到 ${newUser}`, 'info');
+    showEncouragementMessage('info', `已切换到 ${newUser}`);
 }
 
 // 全局滚动锁定工具

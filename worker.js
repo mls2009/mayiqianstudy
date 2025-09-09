@@ -88,6 +88,7 @@ export default {
 
 			if (request.method === "POST" && url.pathname === "/api/records/reset-today") {
 				const { userId = "default", date } = await request.json();
+				console.log("重置今日 - 用户ID:", userId, "日期:", date);
 				await env.DB.prepare("DELETE FROM records WHERE user_id = ? AND date = ?").bind(userId, date).run();
 				return ok("reset-today");
 			}

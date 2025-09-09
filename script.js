@@ -1338,17 +1338,6 @@ function addNegativeBehavior(index) {
     
     console.log('负面行为记录已添加(服务端):', record);
 }
-
-// 快速切换用户函数
-function quickSwitchUser() {
-    const currentUser = localStorage.getItem('currentUser') || '马亦谦';
-    const newUser = currentUser === '马亦谦' ? '马熠初' : '马亦谦';
-    
-    // 切换用户
-    switchUser(newUser);
-    
-    // 显示切换提示
-    showEncouragementMessage('info', `已切换到 ${newUser}`);
 }
 
 // 全局滚动锁定工具

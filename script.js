@@ -1475,3 +1475,20 @@ function hideLoadingState() {
         loadingDiv.remove();
     }
 }
+
+// 更新奖励提示中的用户名
+function updateRewardUserName() {
+    const userNameElement = document.getElementById('rewardUserName');
+    if (userNameElement) {
+        userNameElement.textContent = currentUser || '马亦谦';
+    }
+}
+
+// 重写 showRewardModal 函数
+function showRewardModal() {
+    // 更新用户名
+    updateRewardUserName();
+    
+    const modal = document.getElementById('rewardModal');
+    modal.classList.add('show');
+}

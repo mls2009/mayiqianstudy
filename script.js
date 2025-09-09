@@ -979,10 +979,6 @@ function submitCustomScore() {
         return;
     }
     
-    if (score < -10 || score > 10) {
-        showEncouragementMessage("info", "分值范围应在-10到+10之间！");
-        return;
-    }
     
     // 创建API记录格式
     const now = new Date();

@@ -156,14 +156,29 @@ async function apiResetToday(userId, date) {
 // 统一数据获取与刷新（缺失补齐）
 async function loadRecordsFromAPI() {
 	try {
-		cachedRecords = await apiGetRecords(currentUser || FIXED_USER_ID, 'all');
+		// 同时加载记录和用户数据
+		const [records, userStats] = await Promise.all([
+			apiGetRecords(currentUser || FIXED_USER_ID, "all"),
+			apiGetUserStats(currentUser || FIXED_USER_ID)
+		]);
+		
+		cachedRecords = records;
+		
+		// 更新分数显示
+		const todayScoreElement = document.getElementById("todayScore");
+		const totalScoreElement = document.getElementById("totalScore");
+		const currentTotalScoreElement = document.getElementById("currentTotalScore");
+		
+		if (todayScoreElement) todayScoreElement.textContent = userStats.todayScore || 0;
+		if (totalScoreElement) totalScoreElement.textContent = userStats.totalScore || 0;
+		if (currentTotalScoreElement) currentTotalScoreElement.textContent = userStats.totalScore || 0;
+		
+		console.log("数据加载完成:", { records: records.length, userStats });
 	} catch (e) {
-		console.error('loadRecordsFromAPI失败:', e);
+		console.error("loadRecordsFromAPI失败:", e);
 		// 保底：不抛出，保持旧数据
 	}
-}
-
-async function refreshAllViews() {
+}async function refreshAllViews() {
 	await loadRecordsFromAPI();
 	renderRecords();
 	updateScore();

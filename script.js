@@ -1338,8 +1338,6 @@ function addNegativeBehavior(index) {
     const message = messages[Math.floor(Math.random() * messages.length)];
     showEncouragementMessage('negative', message);
     
-    console.log('负面行为记录已添加(服务端):', record);
-}
 }
 
 // 全局滚动锁定工具

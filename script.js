@@ -178,7 +178,9 @@ async function loadRecordsFromAPI() {
 		console.error("loadRecordsFromAPI失败:", e);
 		// 保底：不抛出，保持旧数据
 	}
-}async function refreshAllViews() {
+}
+
+async function refreshAllViews() {
 	await loadRecordsFromAPI();
 	renderRecords();
 	updateScore();

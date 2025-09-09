@@ -986,7 +986,7 @@ function setTotalScore() {
         behaviorName: '手动调整总分',
         score: delta,
         timestamp: now.toISOString(),
-        date: "1900-01-01", // 使用特殊日期，不影响今日得分
+        date: getBeijingDateString(),
         category: 'adjust',
         itemIndex: null
     };
@@ -1238,7 +1238,7 @@ function addPositiveBehavior(categoryKey, itemIndex) {
         behaviorName: `${category.name} - ${item.name}`,
         score: item.score,
         timestamp: now.toISOString(),
-        date: "1900-01-01", // 使用特殊日期，不影响今日得分
+        date: getBeijingDateString(),
         category: categoryKey,
         itemIndex: itemIndex
     };
@@ -1293,7 +1293,7 @@ function addNegativeBehavior(index) {
         behaviorName: behavior.name,
         score: behavior.score,
         timestamp: now.toISOString(),
-        date: "1900-01-01", // 使用特殊日期，不影响今日得分
+        date: getBeijingDateString(),
         category: 'negative',
         itemIndex: index
     };

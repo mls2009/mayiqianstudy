@@ -32,6 +32,15 @@ function notFound() {
 	});
 }
 
+// 获取北京时间的日期字符串（与前端格式一致）
+function getBeijingDateString() {
+	const now = new Date();
+	// 本地时间 + (8小时 + 本地到UTC的偏移分钟) → 北京时间
+	const minutesToAdd = (8 * 60) + now.getTimezoneOffset();
+	const beijingTime = new Date(now.getTime() + minutesToAdd * 60 * 1000);
+	return beijingTime.toDateString();
+}
+
 export default {
 	async fetch(request, env) {
 		try {
@@ -101,8 +110,8 @@ export default {
 				const avgScore = days ? Math.round((totalScore / days) * 10) / 10 : 0;
 				const rewardDays = results.filter(r => (r.day_score || 0) >= 5).length;
 				
-				// 计算今日得分
-				const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Shanghai' });
+				// 计算今日得分（使用与前端一致的日期格式）
+				const today = getBeijingDateString();
 				const todayRecords = await env.DB.prepare(
 					"SELECT SUM(score) AS today_score FROM records WHERE user_id = ? AND date = ? AND category != 'adjust'"
 				).bind(userId, today).first();

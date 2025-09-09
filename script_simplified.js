@@ -1,5 +1,5 @@
 // 配置
-const API_BASE = 'https://score-api.malisi2009.workers.dev';
+const API_BASE = 'https://api.mayiqian.top';
 const FIXED_USER_ID = 'default';
 const USE_API = true;
 

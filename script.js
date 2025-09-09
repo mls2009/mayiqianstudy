@@ -443,7 +443,7 @@ function renderRecords() {
     const allRecords = getAllRecords();
     
     const today = getBeijingDateString();
-    const todayRecords = allRecords.filter(record => record.date === today);
+    const todayRecords = allRecords.filter(record => record.date === today && record.category !== "adjust");
     
     if (todayRecords.length === 0) {
         recordsList.innerHTML = `
@@ -484,7 +484,7 @@ function updateScore(isPositive = null) {
     // 计算今日得分（统一使用北京时间字符串）
     const today = getBeijingDateString();
     const todayScore = allRecords
-        .filter(record => record.date === today)
+        .filter(record => record.date === today && record.category !== "adjust")
         .reduce((sum, record) => sum + (record.score || 0), 0);
     
     // 总得分改为聚合计算
@@ -521,7 +521,7 @@ function updateRewardCard() {
     // 计算今日得分（统一使用北京时间字符串）
     const today = getBeijingDateString();
     const todayScore = allRecords
-        .filter(record => record.date === today)
+        .filter(record => record.date === today && record.category !== "adjust")
         .reduce((sum, record) => sum + (record.score || 0), 0);
     
     const rewardCard = document.getElementById('rewardCard');
@@ -544,7 +544,7 @@ function updateRewardCard() {
 
 function checkTodayReward() {
     const today = new Date().toDateString();
-    const todayRecords = records.filter(record => record.date === today);
+    const todayRecords = getAllRecords().filter(record => record.date === today && record.category !== "adjust");
     const todayScore = todayRecords.reduce((sum, record) => sum + record.score, 0);
     
     if (todayScore >= 5) {
@@ -986,7 +986,7 @@ function setTotalScore() {
         behaviorName: '手动调整总分',
         score: delta,
         timestamp: now.toISOString(),
-        date: getBeijingDateString(),
+        date: "1900-01-01", // 使用特殊日期，不影响今日得分
         category: 'adjust',
         itemIndex: null
     };
@@ -1238,7 +1238,7 @@ function addPositiveBehavior(categoryKey, itemIndex) {
         behaviorName: `${category.name} - ${item.name}`,
         score: item.score,
         timestamp: now.toISOString(),
-        date: getBeijingDateString(),
+        date: "1900-01-01", // 使用特殊日期，不影响今日得分
         category: categoryKey,
         itemIndex: itemIndex
     };
@@ -1293,7 +1293,7 @@ function addNegativeBehavior(index) {
         behaviorName: behavior.name,
         score: behavior.score,
         timestamp: now.toISOString(),
-        date: getBeijingDateString(),
+        date: "1900-01-01", // 使用特殊日期，不影响今日得分
         category: 'negative',
         itemIndex: index
     };

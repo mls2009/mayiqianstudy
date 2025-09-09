@@ -161,43 +161,41 @@ async function apiResetToday(userId, date) {
 }
 // ---- API integration end ----
 
-// 统一数据获取与刷新（缺失补齐）
+// 简化的数据加载函数（已被 refreshAllViews 替代）
 async function loadRecordsFromAPI() {
 	try {
-		showLoadingState();
-		// 同时加载记录和用户数据
+		cachedRecords = await apiGetRecords(currentUser || FIXED_USER_ID, "all");
+		console.log("记录数据加载完成:", cachedRecords.length);
+	} catch (e) {
+		console.error("loadRecordsFromAPI失败:", e);
+		// 保底：不抛出，保持旧数据
+	}
+}
+
+async function refreshAllViews() {
+	try {
+		// 一次性获取所有需要的数据
 		const [records, userStats] = await Promise.all([
 			apiGetRecords(currentUser || FIXED_USER_ID, "all"),
 			apiGetUserStats(currentUser || FIXED_USER_ID)
 		]);
 		
+		// 更新缓存
 		cachedRecords = records;
 		
-		// 更新分数显示
-		const todayScoreElement = document.getElementById("todayScore");
-		const totalScoreElement = document.getElementById("totalScore");
-		const currentTotalScoreElement = document.getElementById("currentTotalScore");
+		// 更新所有界面元素
+		updateScoreDisplay(userStats);
+		updateRewardCardDisplay(userStats.todayScore || 0);
+		renderRecords();
 		
-		if (todayScoreElement) todayScoreElement.textContent = userStats.todayScore || 0;
-		if (totalScoreElement) totalScoreElement.textContent = userStats.totalScore || 0;
-		if (currentTotalScoreElement) currentTotalScoreElement.textContent = userStats.totalScore || 0;
+		if (currentTab === 'stats') {
+			renderStats();
+		}
 		
-		console.log("数据加载完成:", { records: records.length, userStats });
+		console.log("数据刷新完成:", { records: records.length, userStats });
 	} catch (e) {
-		console.error("loadRecordsFromAPI失败:", e);
-		// 保底：不抛出，保持旧数据
-	} finally {
-		hideLoadingState();
-	}
-}
-
-async function refreshAllViews() {
-	await loadRecordsFromAPI();
-	renderRecords();
-	updateScore();
-	updateRewardCard();
-	if (currentTab === 'stats') {
-		renderStats();
+		console.error("refreshAllViews失败:", e);
+		throw e; // 重新抛出错误供调用者处理
 	}
 }
 
@@ -246,14 +244,9 @@ function initializeApp() {
         });
     }
 
-    // 首屏：优先 API，失败回退本地；确保加载态始终关闭
+    // 首屏：优先 API，失败回退本地
     if (USE_API) {
         refreshAllViews()
-            .then(() => {
-                renderRecords();
-                updateScore();
-                updateRewardCard();
-            })
             .catch((error) => {
                 console.error('API首屏加载失败，回退本地数据:', error);
                 loadData();
@@ -1420,44 +1413,30 @@ function hideLoadingState() {
     }
 }
 
-// 在文件末尾添加新的 API 函数
-async function apiGetUserStats(userId = currentUser || FIXED_USER_ID) {
-    const res = await fetchWithTimeout(`${API_BASE}/api/stats/overview?userId=${encodeURIComponent(userId)}`);
-    if (!res.ok) throw new Error("get stats failed");
-    return res.json();
+// 优化的界面更新函数，避免重复API调用
+function updateScoreDisplay(userStats, isPositive = null) {
+    const todayScoreElement = document.getElementById("todayScore");
+    const totalScoreElement = document.getElementById("totalScore");
+    const currentTotalScoreElement = document.getElementById("currentTotalScore");
+    
+    if (todayScoreElement) todayScoreElement.textContent = userStats.todayScore || 0;
+    if (totalScoreElement) totalScoreElement.textContent = userStats.totalScore || 0;
+    if (currentTotalScoreElement) currentTotalScoreElement.textContent = userStats.totalScore || 0;
+    
+    // 添加分数变化动画
+    if (isPositive !== null && todayScoreElement && totalScoreElement) {
+        const animationClass = isPositive ? "score-up" : "score-down";
+        todayScoreElement.classList.add(animationClass);
+        totalScoreElement.classList.add(animationClass);
+        
+        setTimeout(() => {
+            todayScoreElement.classList.remove(animationClass);
+            totalScoreElement.classList.remove(animationClass);
+        }, 600);
+    }
 }
 
-// 替换 updateScore 函数
-function updateScore(isPositive = null) {
-    // 直接从 API 获取用户统计
-    apiGetUserStats().then(stats => {
-        // 更新显示
-        const todayScoreElement = document.getElementById("todayScore");
-        const totalScoreElement = document.getElementById("totalScore");
-        const currentTotalScoreElement = document.getElementById("currentTotalScore");
-        
-        if (todayScoreElement) todayScoreElement.textContent = stats.todayScore || 0;
-        if (totalScoreElement) totalScoreElement.textContent = stats.totalScore || 0;
-        if (currentTotalScoreElement) currentTotalScoreElement.textContent = stats.totalScore || 0;
-        
-        // 添加分数变化动画
-        if (isPositive !== null && todayScoreElement && totalScoreElement) {
-            const animationClass = isPositive ? "score-up" : "score-down";
-            todayScoreElement.classList.add(animationClass);
-            totalScoreElement.classList.add(animationClass);
-            
-            setTimeout(() => {
-                todayScoreElement.classList.remove(animationClass);
-                totalScoreElement.classList.remove(animationClass);
-            }, 600);
-        }
-        
-        console.log("分数更新:", { todayScore: stats.todayScore, totalScore: stats.totalScore });
-    }).catch(console.error);
-}
-
-// 替换 updateRewardCard 函数
-function updateRewardCard() {
+function updateRewardCardDisplay(todayScore) {
     const rewardCard = document.getElementById("rewardCard");
     const rewardStatus = document.getElementById("rewardStatus");
     if (!rewardCard || !rewardStatus) return;
@@ -1465,17 +1444,34 @@ function updateRewardCard() {
     // 移除所有状态类
     rewardCard.classList.remove("available", "unavailable");
     
-    // 从 API 获取今日得分
+    if (todayScore >= 5) {
+        rewardCard.classList.add("available");
+        rewardStatus.textContent = "🎉 可以看电视啦！";
+    } else {
+        rewardCard.classList.add("unavailable");
+        const needed = 5 - todayScore;
+        rewardStatus.textContent = `还需要${needed}分才能看电视`;
+    }
+}
+
+// 在文件末尾添加新的 API 函数
+async function apiGetUserStats(userId = currentUser || FIXED_USER_ID) {
+    const res = await fetchWithTimeout(`${API_BASE}/api/stats/overview?userId=${encodeURIComponent(userId)}`);
+    if (!res.ok) throw new Error("get stats failed");
+    return res.json();
+}
+
+// 兼容性函数：保持向后兼容，但使用优化的实现
+function updateScore(isPositive = null) {
+    // 单独调用时，需要获取用户统计数据
     apiGetUserStats().then(stats => {
-        const todayScore = stats.todayScore || 0;
-        
-        if (todayScore >= 5) {
-            rewardCard.classList.add("available");
-            rewardStatus.textContent = "🎉 可以看电视啦！";
-        } else {
-            rewardCard.classList.add("unavailable");
-            const needed = 5 - todayScore;
-            rewardStatus.textContent = `还需要${needed}分才能看电视`;
-        }
+        updateScoreDisplay(stats, isPositive);
+    }).catch(console.error);
+}
+
+function updateRewardCard() {
+    // 单独调用时，需要获取用户统计数据
+    apiGetUserStats().then(stats => {
+        updateRewardCardDisplay(stats.todayScore || 0);
     }).catch(console.error);
 }

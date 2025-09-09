@@ -1242,7 +1242,7 @@ function addPositiveBehavior(categoryKey, itemIndex) {
     // 检查次数限制
     const todayCount = getTodayItemCount(categoryKey, itemIndex);
     if (item.dailyLimit && todayCount >= item.dailyLimit) {
-        showEncouragementMessage('今日次数已达上限！', 'warning');
+        showEncouragementMessage('warning', '今日次数已达上限！');
         return;
     }
     

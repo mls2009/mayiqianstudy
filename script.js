@@ -98,7 +98,7 @@ let statsFilterType = null; // null | 'positive' | 'negative'
 let lastRenderedDate = null; // 用于跨天检测
 
 // ---- API integration start ----
-const API_BASE = 'https://api.mayiqian.top';
+const API_BASE = 'https://score-api.malisi2009.workers.dev';
 const FIXED_USER_ID = 'default';
 const USE_API = true;
 let cachedRecords = [];

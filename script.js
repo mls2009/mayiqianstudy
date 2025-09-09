@@ -1,7 +1,3 @@
-// Version: 2025-09-09-fix-syntax-errors
-// Version: 2025-09-09-fix-syntax-errors
-// Version: 2025-09-09-fix-syntax-errors
-// Version: 2025-09-09-fix-syntax-errors
 // 新的行为配置结构
 const behaviorConfig = {
     positive: {
@@ -107,8 +103,16 @@ const FIXED_USER_ID = 'default';
 const USE_API = true;
 let cachedRecords = [];
 
+// 通用：带超时的 fetch，避免移动端网络挂起导致加载态不消失
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+	return await Promise.race([
+		fetch(url, options),
+		new Promise((_, reject) => setTimeout(() => reject(new Error('网络超时，请稍后重试')), timeoutMs))
+	]);
+}
+
 async function apiAddRecord(record) {
-	const res = await fetch(`${API_BASE}/api/records`, {
+	const res = await fetchWithTimeout(`${API_BASE}/api/records`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(record)
@@ -118,7 +122,7 @@ async function apiAddRecord(record) {
 }
 
 async function apiGetRecords(userId = currentUser || FIXED_USER_ID, period = 'all') {
-	const res = await fetch(`${API_BASE}/api/records?userId=${encodeURIComponent(userId)}&period=${period}`);
+	const res = await fetchWithTimeout(`${API_BASE}/api/records?userId=${encodeURIComponent(userId)}&period=${period}`);
 	if (!res.ok) throw new Error('get records failed');
 	const data = await res.json();
 	// 规范后端返回（D1 为下划线命名）为前端使用的 camelCase
@@ -135,13 +139,13 @@ async function apiGetRecords(userId = currentUser || FIXED_USER_ID, period = 'al
 }
 
 async function apiGetStats(userId = FIXED_USER_ID, period = 'all') {
-	const res = await fetch(`${API_BASE}/api/stats?userId=${encodeURIComponent(userId)}&period=${period}`);
+	const res = await fetchWithTimeout(`${API_BASE}/api/stats?userId=${encodeURIComponent(userId)}&period=${period}`);
 	if (!res.ok) throw new Error('get stats failed');
 	return res.json();
 }
 
 async function apiClearAll(userId) {
-	const res = await fetch(`${API_BASE}/api/records/clear`, {
+	const res = await fetchWithTimeout(`${API_BASE}/api/records/clear`, {
 		method: 'POST', headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ userId })
 	});
@@ -149,7 +153,7 @@ async function apiClearAll(userId) {
 }
 
 async function apiResetToday(userId, date) {
-	const res = await fetch(`${API_BASE}/api/records/reset-today`, {
+	const res = await fetchWithTimeout(`${API_BASE}/api/records/reset-today`, {
 		method: 'POST', headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ userId, date })
 	});
@@ -160,6 +164,7 @@ async function apiResetToday(userId, date) {
 // 统一数据获取与刷新（缺失补齐）
 async function loadRecordsFromAPI() {
 	try {
+		showLoadingState();
 		// 同时加载记录和用户数据
 		const [records, userStats] = await Promise.all([
 			apiGetRecords(currentUser || FIXED_USER_ID, "all"),
@@ -181,6 +186,8 @@ async function loadRecordsFromAPI() {
 	} catch (e) {
 		console.error("loadRecordsFromAPI失败:", e);
 		// 保底：不抛出，保持旧数据
+	} finally {
+		hideLoadingState();
 	}
 }
 
@@ -209,41 +216,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
-    // 检查是否跨天，如果跨天则重置今日数据显示
+    // 跨天检查
     checkAndResetDaily();
-    
-    // 加载数据
-    // 优先从API加载数据，然后渲染界面
-    if (USE_API) {
-        // 显示加载状态
-        showLoadingState();
-        refreshAllViews().then(() => {
-            // 数据加载完成后渲染界面
-            renderRecords();
-            updateScore();
-            updateRewardCard();
-            hideLoadingState();
-        }).catch((error) => {
-            console.error("API数据加载失败，使用本地数据:", error);
-            // API失败时回退到本地数据
-            loadData();
-            renderRecords();
-            updateScore();
-            updateRewardCard();
-            hideLoadingState();
-        });
-    } else {
-        // 不使用API时，使用本地数据
-        loadData();
-        renderRecords();
-        updateScore();
-        updateRewardCard();
-    }    updateRewardCard();
-    
+
     // 更新用户显示
     updateUserDisplay();
-    
-    // 设置跨天检测与前台刷新
+
+    // 跨天检测与前台刷新
     lastRenderedDate = getBeijingDateString();
     if (!window.__dailyRefreshTimer) {
         window.__dailyRefreshTimer = setInterval(() => {
@@ -266,10 +245,27 @@ function initializeApp() {
             }
         });
     }
-    
-    // 使用服务端数据刷新
+
+    // 首屏：优先 API，失败回退本地；确保加载态始终关闭
     if (USE_API) {
-        refreshAllViews().catch(console.error);
+        refreshAllViews()
+            .then(() => {
+                renderRecords();
+                updateScore();
+                updateRewardCard();
+            })
+            .catch((error) => {
+                console.error('API首屏加载失败，回退本地数据:', error);
+                loadData();
+                renderRecords();
+                updateScore();
+                updateRewardCard();
+            });
+    } else {
+        loadData();
+        renderRecords();
+        updateScore();
+        updateRewardCard();
     }
 }
 
@@ -962,62 +958,47 @@ function closeCustomModal() {
 }
 
 function submitCustomScore() {
-    const behaviorInput = document.getElementById("customBehaviorInput");
-    const scoreInput = document.getElementById("customScoreInput");
+    const behaviorInput = document.getElementById('customBehaviorInput');
+    const scoreInput = document.getElementById('customScoreInput');
     
     const behaviorName = behaviorInput.value.trim();
     const score = parseInt(scoreInput.value);
     
     // 验证输入
     if (!behaviorName) {
-        showEncouragementMessage("info", "请输入行为描述！");
+        showEncouragementMessage('info', '请输入行为描述！');
         return;
     }
     
     if (isNaN(score) || score === 0) {
-        showEncouragementMessage("info", "请输入有效的分值！");
+        showEncouragementMessage('info', '请输入有效的分值！');
         return;
     }
     
+    if (score < -10 || score > 10) {
+        showEncouragementMessage('info', '分值范围应在-10到+10之间！');
+        return;
+    }
     
-    // 创建API记录格式
-    const now = new Date();
-    const record = {
-        userId: currentUser || FIXED_USER_ID,
-        behaviorName: behaviorName,
+    const customBehavior = {
+        id: Date.now(),
+        name: behaviorName,
         score: score,
-        timestamp: now.toISOString(),
-        date: getBeijingDateString(),
-        category: "custom",
-        itemIndex: null
+        type: score > 0 ? 'positive' : 'negative'
     };
     
-    // 使用API添加记录
-    apiAddRecord(record)
-        .then(() => {
-            // 关闭弹窗
-            closeCustomModal();
-            
-            // 清空输入框
-            behaviorInput.value = "";
-            scoreInput.value = "";
-            
-            // 刷新界面
-            refreshAllViews();
-            
-            // 显示成功消息
-            showEncouragementMessage("positive", `已添加${behaviorName} ${score > 0 ? "+" : ""}${score}分！`);
-            
-            // 触觉反馈
-            if (navigator.vibrate) {
-                navigator.vibrate(score > 0 ? [50, 50, 50] : [100]);
-            }
-        })
-        .catch((error) => {
-            console.error("添加自定义记录失败:", error);
-            showEncouragementMessage("info", `添加失败：${error.message}`);
-        });
+    // 添加记录但不保存到行为列表
+    addRecord(customBehavior);
+    
+    // 关闭弹窗
+    closeCustomModal();
+    
+    // 触觉反馈
+    if (navigator.vibrate) {
+        navigator.vibrate(score > 0 ? [50, 50, 50] : [100]);
+    }
 }
+
 // 设置页面功能
 function setTotalScore() {
     const input = document.getElementById('totalScoreInput');
@@ -1283,7 +1264,7 @@ function addPositiveBehavior(categoryKey, itemIndex) {
     // 检查次数限制
     const todayCount = getTodayItemCount(categoryKey, itemIndex);
     if (item.dailyLimit && todayCount >= item.dailyLimit) {
-        showEncouragementMessage('warning', '今日次数已达上限！');
+        showEncouragementMessage('今日次数已达上限！', 'warning');
         return;
     }
     
@@ -1377,7 +1358,9 @@ function addNegativeBehavior(index) {
     const message = messages[Math.floor(Math.random() * messages.length)];
     showEncouragementMessage('negative', message);
     
+    console.log('负面行为记录已添加(服务端):', record);
 }
+
 
 // 全局滚动锁定工具
 let isBodyLocked = false;
@@ -1404,9 +1387,26 @@ function unlockBodyScroll() {
     document.body.classList.remove('lock-scroll');
     document.documentElement.classList.remove('lock-scroll');
     document.removeEventListener('touchmove', preventBodyScroll, { passive: false });
-}// 在文件末尾添加新的 API 函数
+}
+
+// 加载状态管理函数
+function showLoadingState() {
+    const loadingEl = document.querySelector('.loading');
+    if (loadingEl) {
+        loadingEl.style.display = 'flex';
+    }
+}
+
+function hideLoadingState() {
+    const loadingEl = document.querySelector('.loading');
+    if (loadingEl) {
+        loadingEl.style.display = 'none';
+    }
+}
+
+// 在文件末尾添加新的 API 函数
 async function apiGetUserStats(userId = currentUser || FIXED_USER_ID) {
-    const res = await fetch(`${API_BASE}/api/stats/overview?userId=${encodeURIComponent(userId)}`);
+    const res = await fetchWithTimeout(`${API_BASE}/api/stats/overview?userId=${encodeURIComponent(userId)}`);
     if (!res.ok) throw new Error("get stats failed");
     return res.json();
 }
@@ -1462,48 +1462,4 @@ function updateRewardCard() {
             rewardStatus.textContent = `还需要${needed}分才能看电视`;
         }
     }).catch(console.error);
-}
-
-// 添加加载状态显示函数
-function showLoadingState() {
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'loadingState';
-    loadingDiv.innerHTML = '正在加载数据...';
-    loadingDiv.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        z-index: 9999;
-        font-size: 16px;
-    `;
-    document.body.appendChild(loadingDiv);
-}
-
-function hideLoadingState() {
-    const loadingDiv = document.getElementById('loadingState');
-    if (loadingDiv) {
-        loadingDiv.remove();
-    }
-}
-
-// 更新奖励提示中的用户名
-function updateRewardUserName() {
-    const userNameElement = document.getElementById('rewardUserName');
-    if (userNameElement) {
-        userNameElement.textContent = currentUser || '马亦谦';
-    }
-}
-
-// 重写 showRewardModal 函数
-function showRewardModal() {
-    // 更新用户名
-    updateRewardUserName();
-    
-    const modal = document.getElementById('rewardModal');
-    modal.classList.add('show');
 }

@@ -104,7 +104,7 @@ const USE_API = true;
 let cachedRecords = [];
 
 // 通用：带超时的 fetch，避免移动端网络挂起导致加载态不消失
-async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
 	return await Promise.race([
 		fetch(url, options),
 		new Promise((_, reject) => setTimeout(() => reject(new Error('网络超时，请稍后重试')), timeoutMs))
@@ -980,23 +980,39 @@ function submitCustomScore() {
         return;
     }
     
-    const customBehavior = {
-        id: Date.now(),
-        name: behaviorName,
+    // 创建API记录格式
+    const now = new Date();
+    const record = {
+        userId: currentUser || FIXED_USER_ID,
+        behaviorName: behaviorName,
         score: score,
-        type: score > 0 ? 'positive' : 'negative'
+        timestamp: now.toISOString(),
+        date: getBeijingDateString(),
+        category: 'custom',
+        itemIndex: null
     };
     
-    // 添加记录但不保存到行为列表
-    addRecord(customBehavior);
-    
-    // 关闭弹窗
-    closeCustomModal();
-    
-    // 触觉反馈
-    if (navigator.vibrate) {
-        navigator.vibrate(score > 0 ? [50, 50, 50] : [100]);
-    }
+    // 使用API添加记录
+    apiAddRecord(record)
+        .then(() => {
+            // 关闭弹窗
+            closeCustomModal();
+            
+            // 刷新界面
+            refreshAllViews();
+            
+            // 显示成功消息
+            showEncouragementMessage('positive', `已添加${behaviorName} ${score > 0 ? '+' : ''}${score}分！`);
+            
+            // 触觉反馈
+            if (navigator.vibrate) {
+                navigator.vibrate(score > 0 ? [50, 50, 50] : [100]);
+            }
+        })
+        .catch((error) => {
+            console.error('添加自定义记录失败:', error);
+            showEncouragementMessage('info', `添加失败：${error.message}`);
+        });
 }
 
 // 设置页面功能

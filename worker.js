@@ -53,26 +53,12 @@ export default {
 
 				// 确保用户存在，避免外键错误
 				await env.DB.prepare(
-					"INSERT OR IGNORE INTO users (id, name, total_score, today_score, last_reset_date) VALUES (?, ?, 0, 0, ?)"
-				).bind(userId, userId, date).run();
+					"INSERT OR IGNORE INTO users (id, name) VALUES (?, ?)"
+				).bind(userId, userId).run();
 
-				// 插入记录
 				await env.DB.prepare(
 					"INSERT INTO records (id, user_id, behavior_name, score, timestamp, date, category, item_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 				).bind(id, userId, behaviorName, score, timestamp, date, category, itemIndex).run();
-
-				// 更新用户得分
-				if (category === 'adjust') {
-					// 手动调整总得分
-					await env.DB.prepare(
-						"UPDATE users SET total_score = ? WHERE id = ?"
-					).bind(score, userId).run();
-				} else {
-					// 正常行为记录
-					await env.DB.prepare(
-						"UPDATE users SET total_score = total_score + ?, today_score = today_score + ? WHERE id = ?"
-					).bind(score, score, userId).run();
-				}
 
 				return json({ id });
 			}
@@ -88,23 +74,22 @@ export default {
 			if (request.method === "POST" && url.pathname === "/api/records/clear") {
 				const { userId = "default" } = await request.json();
 				await env.DB.prepare("DELETE FROM records WHERE user_id = ?").bind(userId).run();
-				await env.DB.prepare("UPDATE users SET total_score = 0, today_score = 0 WHERE id = ?").bind(userId).run();
 				return ok("cleared");
 			}
 
 			if (request.method === "POST" && url.pathname === "/api/records/reset-today") {
 				const { userId = "default", date } = await request.json();
 				await env.DB.prepare("DELETE FROM records WHERE user_id = ? AND date = ?").bind(userId, date).run();
-				await env.DB.prepare("UPDATE users SET today_score = 0 WHERE id = ?").bind(userId).run();
 				return ok("reset-today");
 			}
 
 			if (request.method === "GET" && url.pathname === "/api/stats/overview") {
 				const userId = url.searchParams.get("userId") || "default";
-				const user = await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(userId).first();
-				if (!user) {
-					return json({ days: 0, avgScore: 0, rewardDays: 0, totalScore: 0 });
-				}
+				
+				// 确保用户存在
+				await env.DB.prepare(
+					"INSERT OR IGNORE INTO users (id, name) VALUES (?, ?)"
+				).bind(userId, userId).run();
 				
 				// 计算统计信息
 				const { results } = await env.DB.prepare(
@@ -112,15 +97,23 @@ export default {
 				).bind(userId).all();
 				
 				const days = results.length;
-				const avgScore = days ? Math.round((user.total_score / days) * 10) / 10 : 0;
+				const totalScore = results.reduce((sum, r) => sum + (r.day_score || 0), 0);
+				const avgScore = days ? Math.round((totalScore / days) * 10) / 10 : 0;
 				const rewardDays = results.filter(r => (r.day_score || 0) >= 5).length;
+				
+				// 计算今日得分
+				const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Shanghai' });
+				const todayRecords = await env.DB.prepare(
+					"SELECT SUM(score) AS today_score FROM records WHERE user_id = ? AND date = ? AND category != 'adjust'"
+				).bind(userId, today).first();
+				const todayScore = todayRecords?.today_score || 0;
 				
 				return json({ 
 					days, 
 					avgScore, 
 					rewardDays, 
-					totalScore: user.total_score,
-					todayScore: user.today_score
+					totalScore,
+					todayScore
 				});
 			}
 

@@ -962,47 +962,66 @@ function closeCustomModal() {
 }
 
 function submitCustomScore() {
-    const behaviorInput = document.getElementById('customBehaviorInput');
-    const scoreInput = document.getElementById('customScoreInput');
+    const behaviorInput = document.getElementById("customBehaviorInput");
+    const scoreInput = document.getElementById("customScoreInput");
     
     const behaviorName = behaviorInput.value.trim();
     const score = parseInt(scoreInput.value);
     
     // 验证输入
     if (!behaviorName) {
-        showEncouragementMessage('info', '请输入行为描述！');
+        showEncouragementMessage("info", "请输入行为描述！");
         return;
     }
     
     if (isNaN(score) || score === 0) {
-        showEncouragementMessage('info', '请输入有效的分值！');
+        showEncouragementMessage("info", "请输入有效的分值！");
         return;
     }
     
     if (score < -10 || score > 10) {
-        showEncouragementMessage('info', '分值范围应在-10到+10之间！');
+        showEncouragementMessage("info", "分值范围应在-10到+10之间！");
         return;
     }
     
-    const customBehavior = {
-        id: Date.now(),
-        name: behaviorName,
+    // 创建API记录格式
+    const now = new Date();
+    const record = {
+        userId: currentUser || FIXED_USER_ID,
+        behaviorName: behaviorName,
         score: score,
-        type: score > 0 ? 'positive' : 'negative'
+        timestamp: now.toISOString(),
+        date: getBeijingDateString(),
+        category: "custom",
+        itemIndex: null
     };
     
-    // 添加记录但不保存到行为列表
-    addRecord(customBehavior);
-    
-    // 关闭弹窗
-    closeCustomModal();
-    
-    // 触觉反馈
-    if (navigator.vibrate) {
-        navigator.vibrate(score > 0 ? [50, 50, 50] : [100]);
-    }
+    // 使用API添加记录
+    apiAddRecord(record)
+        .then(() => {
+            // 关闭弹窗
+            closeCustomModal();
+            
+            // 清空输入框
+            behaviorInput.value = "";
+            scoreInput.value = "";
+            
+            // 刷新界面
+            refreshAllViews();
+            
+            // 显示成功消息
+            showEncouragementMessage("positive", `已添加${behaviorName} ${score > 0 ? "+" : ""}${score}分！`);
+            
+            // 触觉反馈
+            if (navigator.vibrate) {
+                navigator.vibrate(score > 0 ? [50, 50, 50] : [100]);
+            }
+        })
+        .catch((error) => {
+            console.error("添加自定义记录失败:", error);
+            showEncouragementMessage("info", `添加失败：${error.message}`);
+        });
 }
-
 // 设置页面功能
 function setTotalScore() {
     const input = document.getElementById('totalScoreInput');

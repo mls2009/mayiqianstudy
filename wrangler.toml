@@ -5,6 +5,12 @@ compatibility_date = "2024-01-01"
 [placement]
 mode = "smart"
 
+# 自定义域名：api.mayichu.top → 本 Worker
+# 前提：mayichu.top 已接入当前 Cloudflare 账号（NS 指向 Cloudflare）
+routes = [
+	{ pattern = "api.mayichu.top", custom_domain = true }
+]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "my-score-db"

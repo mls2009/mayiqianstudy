@@ -31,7 +31,7 @@ The application follows a simple client-side architecture:
 ## API Integration
 
 The system integrates with a backend API for data persistence:
-- Base URL: `https://api.mayiqian.top`
+- Base URL: `https://api.mayichu.top`
 - Endpoints: `/students`, `/scores`, `/stats`
 - Authentication: Not required for current implementation
 - Data sync: Automatic background synchronization with localStorage fallback

@@ -11,3 +11,8 @@ test('行为打分也使用两个物理数据库；清空一方不会影响另�
  assert.equal((await(await worker.fetch(req('GET','马亦谦'),env)).json()).length,0);
  assert.equal((await(await worker.fetch(req('GET','马熠初'),env)).json()).length,1);
 });
+test('商店支出计入总积分和记录，但不减少今日学习得分',async()=>{
+ const env={DB_MAYIQIAN:db(),DB_MAYICHU:db()},date=new Date(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai'}).format(new Date())+'T12:00:00').toDateString();
+ for(const [score,category] of [[50,'study'],[-10,'shop']])await worker.fetch(req('POST','马亦谦',{behaviorName:'测试',score,date,timestamp:new Date().toISOString(),category}),env);
+ const r=await worker.fetch(new Request('https://example.test/api/stats/overview?userId='+encodeURIComponent('马亦谦')),env);const s=await r.json();assert.equal(s.totalScore,40);assert.equal(s.todayScore,50);
+});

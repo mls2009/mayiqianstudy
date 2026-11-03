@@ -346,3 +346,42 @@
 #pokemonPage:not(.exp-map-page) .exp-view-heading {position:sticky;top:0;z-index:4;background:#f2f2f6f5;padding:8px 0;backdrop-filter:blur(10px);}
 
 #pokemonPage.exp-map-page {padding-bottom:0;}
+/* Forest Mart: illustrated crystals on warm wooden shelves. */
+.exp-place-shop {right:4%;top:17%;}
+.exp-place-shop .exp-place-pin {background:#876d9d;}
+#pokemonPage .exp-place-lab {right:4%;top:74%;}
+#pokemonPage .exp-place-forest {left:6%;top:43%;}
+.exp-place-shop::after {height:65px;top:-65px;left:0;right:20px;}
+.exp-shop {max-width:760px;margin:auto;}
+.exp-shop-counter {position:relative;padding:32px 18px 22px;border-radius:18px 18px 6px 6px;background:repeating-linear-gradient(90deg,#81543f 0 50px,#79503c 51px 53px);text-align:center;color:#fff4d6;border:5px solid #b28e62;box-shadow:0 6px 0 #634734;}
+.exp-shop-counter>span {font-size:10px;letter-spacing:4px;color:#e2c99d;}
+.exp-shop-counter h2 {font-family:'Songti SC',serif;font-size:30px;margin:10px 0;}
+.exp-shop-counter p {font-size:12px;}.exp-shop-counter strong {display:inline-block;padding:8px 18px;background:#fff1cf;color:#654932;border-radius:20px;font-size:14px;margin-top:10px;}
+.exp-shop-shelves {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px;padding:24px 4px;}
+.exp-shop-item {padding:12px 10px;background:#fffaeb;border:1px solid #d9c8a4;border-bottom:7px solid #af8a5d;border-radius:12px 12px 4px 4px;text-align:center;box-shadow:0 4px 0 #79593a28;}
+.exp-shop-item svg {width:90px;height:90px;filter:drop-shadow(0 5px 6px #947d5520);}.exp-shop-item h3 {font-size:16px;margin:4px 0;}.exp-shop-item small {font-size:11px;color:#8c805f;}.exp-shop-item button {display:block;width:100%;min-height:42px;margin-top:10px;border:0;border-radius:8px;background:#507655;color:#fff5df;font-size:12px!important;}.exp-shop-item .exp-use-stone {background:#ede8d6;color:#716449;}
+.exp-stone-preview {width:100px;margin:auto;}.exp-evolve-option {display:flex;align-items:center;gap:8px;background:#fff9e8;border:1px solid #d6d9c1;border-radius:12px;padding:10px;margin:12px 0;width:100%;text-align:left;min-height:72px;}.exp-evolve-option img {width:50px;height:50px;object-fit:contain;}.exp-evolve-option span {flex:1;font-size:13px;}.exp-evolve-option small {display:block;font-size:10px;color:#8a8c76;margin-top:8px;}
+
+.exp-shop>.exp-note {margin:20px 4px 0;line-height:1.8;font-size:12px;}
+.exp-evolve-dialog {background:#f8f7e9;text-align:center;overflow-x:hidden;}
+.exp-evolve-stage {position:relative;height:300px;margin:20px -10px;isolation:isolate;animation:exp-evolve-duration 6.4s linear both;}
+.exp-evolve-source,.exp-evolve-target {position:absolute;inset:35px 0;display:grid;place-items:center;}
+.exp-evolve-source img,.exp-evolve-target img {width:220px;height:220px;object-fit:contain;}
+.exp-evolve-source {animation:exp-evolve-source 6.4s ease-in-out both;}
+.exp-evolve-target {animation:exp-evolve-target 6.4s ease-out both;}
+.exp-evolve-crystal {position:absolute;width:70px;height:70px;bottom:0;left:calc(50% - 35px);animation:exp-evolve-stone 6.4s both;}
+.exp-evolve-orbit {position:absolute;width:230px;height:230px;left:calc(50% - 115px);top:35px;border:2px solid var(--stone-color);border-radius:50%;box-shadow:0 0 30px var(--stone-color),inset 0 0 30px #fff8bd;animation:exp-evolve-orbit 6.4s ease-in-out both;}
+.exp-evolve-orbit.is-second {width:270px;height:270px;top:15px;left:calc(50% - 135px);border-style:dashed;animation-direction:reverse;}
+.exp-evolve-flash {position:absolute;inset:-15px;background:radial-gradient(circle,#fff 10%,#fffbd2 30%,transparent 68%);animation:exp-evolve-flash 6.4s both;}
+.exp-evolve-spark {position:absolute;top:50%;left:50%;width:5px;height:14px;border-radius:50%;background:var(--stone-color);box-shadow:0 0 10px #fff;transform:rotate(var(--angle)) translateY(-120px);animation:exp-evolve-spark 1.2s var(--delay) 5 both;}
+.exp-evolve-result {visibility:hidden;}.exp-evolve-result h3 {font-size:26px;font-family:'Songti SC',serif;margin:0 0 12px;}.exp-evolve-result p {font-size:12px;line-height:1.8;color:#7b806d;}.exp-evolve-status {min-height:24px;font-size:13px;color:#6f7e62;}
+.exp-evolve-finished .exp-evolve-result {visibility:visible;}.exp-evolve-finished .exp-evolve-skip,.exp-evolve-finished .exp-evolve-source,.exp-evolve-finished .exp-evolve-crystal,.exp-evolve-finished .exp-evolve-flash {display:none;}.exp-evolve-finished .exp-evolve-target {animation:none;opacity:1;filter:none;transform:none;}.exp-evolve-finished .exp-evolve-orbit,.exp-evolve-finished .exp-evolve-spark {animation:none;opacity:0;}
+@keyframes exp-evolve-duration {from{opacity:1}to{opacity:1}}
+@keyframes exp-evolve-source {0%,18%{opacity:1;filter:none;transform:scale(1)}40%{filter:brightness(0) invert(1);transform:scale(1.12)}50%{opacity:1;filter:brightness(0) invert(1);transform:scale(.8)}60%,100%{opacity:0;filter:brightness(0) invert(1);transform:scale(.2)}}
+@keyframes exp-evolve-target {0%,57%{opacity:0;transform:scale(.2);filter:brightness(0) invert(1)}65%{opacity:1;transform:scale(1.12);filter:brightness(0) invert(1)}82%,100%{opacity:1;transform:scale(1);filter:none}}
+@keyframes exp-evolve-stone {0%{opacity:0;transform:translateY(20px)}15%,40%{opacity:1;transform:translateY(-15px);filter:drop-shadow(0 0 16px var(--stone-color))}65%,100%{opacity:0;transform:translateY(-120px) scale(.3)}}
+@keyframes exp-evolve-orbit {0%{opacity:0;transform:scale(.3) rotate(0)}25%{opacity:.4}55%{opacity:1;transform:scale(1.1) rotate(200deg)}85%,100%{opacity:0;transform:scale(1.4) rotate(360deg)}}
+@keyframes exp-evolve-flash {0%,45%,90%,100%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.3)}}
+@keyframes exp-evolve-spark {0%{opacity:0;transform:rotate(var(--angle)) translateY(-35px)}50%{opacity:.8}100%{opacity:0;transform:rotate(var(--angle)) translateY(-145px)}}
+@media(max-width:350px){.exp-evolve-stage{height:250px}.exp-evolve-source img,.exp-evolve-target img{width:180px;height:180px}}
+@media(prefers-reduced-motion:reduce){.exp-evolve-dialog *{animation:none!important}}

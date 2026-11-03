@@ -147,18 +147,18 @@ export default {
 				
 				// 计算统计信息
 				const { results } = await withRetry(() => env.DB.prepare(
-					"SELECT date, SUM(score) AS day_score FROM records WHERE user_id = ? AND category != 'adjust' GROUP BY date"
+					"SELECT date, SUM(score) AS day_score FROM records WHERE user_id = ? AND category NOT IN ('adjust','shop') GROUP BY date"
 				).bind(userId).all());
 				
 				const days = results.length;
-				const totalScore = results.reduce((sum, r) => sum + (r.day_score || 0), 0);
+				const totalScore = Number((await withRetry(() => env.DB.prepare('SELECT COALESCE(SUM(score),0) AS total FROM records WHERE user_id = ?').bind(userId).first()))?.total || 0);
 				const avgScore = days ? Math.round((totalScore / days) * 10) / 10 : 0;
 				const rewardDays = results.filter(r => (r.day_score || 0) >= 5).length;
 				
 				// 计算今日得分（使用与前端一致的日期格式）
 				const today = getBeijingDateString();
 				const todayRecords = await withRetry(() => env.DB.prepare(
-					"SELECT SUM(score) AS today_score FROM records WHERE user_id = ? AND date = ? AND category != 'adjust'"
+					"SELECT SUM(score) AS today_score FROM records WHERE user_id = ? AND date = ? AND category NOT IN ('adjust','shop')"
 				).bind(userId, today).first());
 				const todayScore = todayRecords?.today_score || 0;
 				

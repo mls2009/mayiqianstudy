@@ -44,6 +44,8 @@
 <path d="M282 410h44m-48 6h52" stroke="#e4c993" stroke-width="5" stroke-linecap="round"/>
 </g>
 <use href="#tree" transform="translate(393 363) scale(.75)"/><use href="#pine" transform="translate(224 400) scale(.8)"/>
+<!-- Original timber shop and striped canvas awning. -->
+<g transform="translate(268 45)" filter="url(#shadow)"><path d="M0 23h82v55H0Z" fill="#c99b69" stroke="#947049" stroke-width="2"/><path d="m-7 23 12-22h68l16 22Z" fill="#bd6554"/><path d="M5 1h13l-4 22H0m31-22h13v22H28m29-22h13l8 22H58" fill="#fff1d2"/><path d="M-7 23v7q7 9 15 0 7 9 14 0 7 9 14 0 7 9 14 0 7 9 14 0 7 9 14 0 7 9 11 0v-7" fill="#fff1d2"/><rect x="9" y="39" width="64" height="27" rx="3" fill="#6e5943"/><path d="m22 44 8-7 8 9-9 14-9-6Z" fill="#8ab6bd"/><path d="m47 43 9-7 9 11-8 13-11-5Z" fill="#dec172"/><path d="M5 69h73" stroke="#e5bd86" stroke-width="6"/></g>
 <!-- Orchard, flowers, stepping stones, compass and small shore details. -->
 <use href="#tree" transform="translate(78 420)"/><use href="#tree" transform="translate(113 448) scale(.7)"/>
 <use href="#pine" transform="translate(335 95) scale(.65)"/><use href="#tree" transform="translate(292 79) scale(.65)"/>

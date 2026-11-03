@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import {handleAdventure as handle} from '../pokemon-api.mjs';
-function database(){const db=new DatabaseSync(':memory:');return {prepare(sql){let args=[];const q={bind(...a){args=a;return q;},async run(){const r=db.prepare(sql).run(...args);return {meta:{changes:Number(r.changes)}};},async first(){return db.prepare(sql).get(...args);}};return q;}};}
+function database(){const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE users(id TEXT PRIMARY KEY,name TEXT);CREATE TABLE records(id TEXT PRIMARY KEY,user_id TEXT,behavior_name TEXT,score INTEGER,timestamp TEXT,date TEXT,category TEXT)');return {async batch(statements){db.exec('BEGIN');try{const results=[];for(const q of statements)results.push(await q.run());db.exec('COMMIT');return results;}catch(e){db.exec('ROLLBACK');throw e;}},prepare(sql){let args=[];const q={bind(...a){args=a;return q;},async run(){const r=db.prepare(sql).run(...args);return {meta:{changes:Number(r.changes)}};},async first(){return db.prepare(sql).get(...args);}};return q;}};}
 const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai'}).format(new Date());
 const request=(method,body,user='马亦谦')=>new Request('https://example.test/api/adventure?userId='+encodeURIComponent(user),{method,...(body?{body:JSON.stringify({...body,userId:user}),headers:{'Content-Type':'application/json'}}:{})});
 const envs=()=>({DB_MAYIQIAN:database(),DB_MAYICHU:database()});
@@ -49,4 +49,21 @@ test('无需填写计划即可通过API确认固定任务，客户端不能替�
  assert.equal((await r.json()).days[today].tasks[1].text,'完成4篇英语作业');
  assert.equal((await claim(env,'english','required')).status,200);
  assert.equal((await claim(env,'english','required')).status,400);
+});
+
+test('购买原子扣积分发石头，重复请求不重复扣，余额不足和另一个账号均不受影响',async()=>{
+ const env=envs();await env.DB_MAYIQIAN.prepare("INSERT INTO records(id,user_id,score) VALUES ('initial','马亦谦',15)").run();
+ const buy=(id,user='马亦谦')=>handle(request('POST',{action:'buy',date:today,type:'电',operationId:id},user),env);
+ assert.equal((await buy('purchase1')).status,200);
+ let s=await state(env);assert.equal(s._balance,5);assert.equal(s.stones['电'],1);
+ assert.equal((await buy('purchase1')).status,400);assert.equal((await buy('purchase2')).status,409);
+ assert.equal((await buy('purchase3','马熠初')).status,409);
+ s=await state(env);assert.equal(s._balance,5);assert.equal(s.stones['电'],1);
+ assert.equal((await env.DB_MAYIQIAN.prepare("SELECT COUNT(*) AS n FROM records WHERE behavior_name='宝可梦商店购买雷进化石' AND score=-10").first()).n,1);
+});
+test('扣分写入失败时整笔购买回滚，不发石头也不扣积分',async()=>{
+ const env=envs();await env.DB_MAYIQIAN.prepare("INSERT INTO records(id,user_id,score) VALUES ('initial','马亦谦',15)").run();
+ await env.DB_MAYIQIAN.prepare("CREATE TRIGGER reject_purchase BEFORE INSERT ON records WHEN NEW.score=-10 BEGIN SELECT RAISE(ABORT,'test failure'); END").run();
+ await assert.rejects(handle(request('POST',{action:'buy',date:today,type:'电',operationId:'rollback1'}),env));
+ const s=await state(env);assert.equal(s._balance,15);assert.equal(s.stones?.['电']||0,0);
 });

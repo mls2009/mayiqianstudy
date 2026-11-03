@@ -54,7 +54,7 @@
         throw Error('请选择普通球或金色大师球');
     }
     function encountersFor(state, id = null) {
-        return Object.values(state.days).flatMap(draws).filter(e=>id===null||e.pokemonId===id).map(e=>e.ball?e:{...e,ball:'normal',rarity:category(byId.get(e.pokemonId)),legacy:true}).sort((a,b)=>b.at.localeCompare(a.at)||(b.sequence||0)-(a.sequence||0));
+        return [...Object.values(state.days).flatMap(draws),...(state.evolutions||[])].filter(e=>id===null||e.pokemonId===id).map(e=>e.ball?e:{...e,ball:'normal',rarity:category(byId.get(e.pokemonId)),legacy:true}).sort((a,b)=>b.at.localeCompare(a.at)||(b.sequence||0)-(a.sequence||0));
     }
     function poolWeights(state,ball,rarity) {
         const owned=new Set(encountersFor(state).map(e=>e.pokemonId));
@@ -82,6 +82,27 @@
         }
         return next;
     }
+    const stones=[['火','#d66a43'],['水','#5b9fca'],['电','#d6af38'],['草','#73a35d'],['冰','#8bbfc9'],['一般','#a99b83'],['格斗','#b47561'],['毒','#9a75a3'],['地面','#b3915f'],['飞行','#97acc7'],['超能力','#cf839d'],['虫','#9cab52'],['岩石','#a49b70'],['幽灵','#7e79a8'],['龙','#7a91b3'],['恶','#776e69'],['钢','#8faba9'],['妖精','#ce9fac']].map(([type,color])=>({type,color,name:(type==='电'?'雷':type)+'进化石',price:10}));
+    function copies(state) {
+        const result=Object.entries(state.days).flatMap(([date,day])=>draws(day).map((e,i)=>({...e,id:date+':'+i})));
+        for(const e of state.evolutions||[]){const c=result.find(c=>c.id===e.copyId);if(c)c.pokemonId=e.to;}
+        return result;
+    }
+    function evolutionTargets(id,type) {return (getPokemon(id)?.evolutionChildren||[]).map(getPokemon).filter(p=>p&&!p.isMega&&p.types.includes(type));}
+    function buyStone(state,type,operationId,at=new Date().toISOString()) {
+        if(!stones.some(s=>s.type===type))throw Error('请选择有效的进化石');
+        if(typeof operationId!=='string'||operationId.length<4||operationId.length>80)throw Error('无效购买请求');
+        if(state.purchases?.some(p=>p.id===operationId))throw Error('这笔购买已经完成，请刷新查看');
+        const next=copy(state);next.stones={...next.stones,[type]:(next.stones?.[type]||0)+1};
+        next.purchases=[...(next.purchases||[]),{id:operationId,type,cost:10,at}];return next;
+    }
+    function evolve(state,copyId,to,type,at=new Date().toISOString()) {
+        const c=copies(state).find(c=>c.id===copyId);
+        if(!c||!evolutionTargets(c.pokemonId,type).some(p=>p.id===Number(to)))throw Error('这颗进化石不能用于这条进化路线');
+        if(!(state.stones?.[type]>0))throw Error('这颗进化石的数量不足');
+        const next=copy(state);next.stones[type]--;
+        next.evolutions=[...(next.evolutions||[]),{copyId,from:c.pokemonId,to:Number(to),type,at,date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai'}).format(new Date(at)),pokemonId:Number(to),tasks:[],method:getPokemon(c.pokemonId).name+' → '+getPokemon(to).name+' · '+(stones.find(s=>s.type===type)?.name||type)+'进化',ball:'evolution'}];return next;
+    }
     const getPokemon=id=>byId.get(Number(id));
     const family=id=>catalog.filter(p=>p.familyRoot===getPokemon(id).familyRoot);
     function filterCatalog({type='all',family='all',status='all',owned=new Set(),rarity='all',query=''} = {}) {
@@ -90,7 +111,7 @@
             (rarity==='all'||p.rarity===Number(rarity))&&(!term||`${p.name} ${p.englishName} ${p.identifier} ${p.id}`.toLowerCase().includes(term))&&
             (status==='all'||(status==='owned'?owned.has(p.id):!owned.has(p.id))));
     }
-    const api={catalog,species:catalog,trainers,rarityNames,category,draws,getPokemon,family,filterCatalog,encountersFor,labels,fixedTasks,empty,freshDay,setPlan,complete,pending,groups,claimed,legacyClaim,rewardOptions,odds,poolWeights,claim};
+    const api={stones,copies,evolutionTargets,buyStone,evolve,catalog,species:catalog,trainers,rarityNames,category,draws,getPokemon,family,filterCatalog,encountersFor,labels,fixedTasks,empty,freshDay,setPlan,complete,pending,groups,claimed,legacyClaim,rewardOptions,odds,poolWeights,claim};
     root.PokemonCore=api;
     if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

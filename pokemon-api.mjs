@@ -18,7 +18,8 @@ export async function handleAdventure(request, env) {
     await db.prepare('INSERT OR IGNORE INTO adventures (user_id,state,version) VALUES (?,?,0)').bind(user,JSON.stringify(P.empty())).run();
     const row = await db.prepare('SELECT state,version FROM adventures WHERE user_id = ?').bind(user).first();
     const state = JSON.parse(row.state);
-    if (request.method === 'GET') return reply(state);
+    const balance=async()=>Number((await db.prepare('SELECT COALESCE(SUM(score),0) AS balance FROM records WHERE user_id = ?').bind(user).first())?.balance||0);
+    if (request.method === 'GET') return reply({...state,_balance:await balance()});
     const today = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai'}).format(new Date());
     let next;
     try {
@@ -30,9 +31,21 @@ export async function handleAdventure(request, env) {
             const random = new Uint32Array(4);
             crypto.getRandomValues(random);
             next = P.claim(state,body.date,body.group,body.choice,[[random[0]/4294967296,random[1]/4294967296],[random[2]/4294967296,random[3]/4294967296]]);
-        } else throw Error('未知操作');
+        } else if(body.action==='buy')next=P.buyStone(state,body.type,body.operationId);
+        else if(body.action==='evolve')next=P.evolve(state,body.copyId,body.to,body.type);
+        else throw Error('未知操作');
     } catch(e) { return reply({error:e.message},400); }
-    const result = await db.prepare('UPDATE adventures SET state = ?, version = version + 1 WHERE user_id = ? AND version = ?').bind(JSON.stringify(next),user,row.version).run();
-    if (result.meta.changes !== 1) return reply({error:'另一台设备已更新记录，请刷新后查看'},409);
-    return reply(next);
+    if(body.action==='buy') {
+        const stone=P.stones.find(s=>s.type===body.type),at=new Date().toISOString();
+        await db.prepare('INSERT OR IGNORE INTO users (id,name) VALUES (?,?)').bind(user,user).run();
+        const results=await db.batch([
+            db.prepare('UPDATE adventures SET state = ?, version = version + 1 WHERE user_id = ? AND version = ? AND (SELECT COALESCE(SUM(score),0) FROM records WHERE user_id = ?) >= 10').bind(JSON.stringify(next),user,row.version,user),
+            db.prepare('INSERT INTO records (id,user_id,behavior_name,score,timestamp,date,category) SELECT ?,?,?,-10,?,?,? WHERE changes() = 1').bind(crypto.randomUUID(),user,'宝可梦商店购买'+stone.name,at,new Date(body.date+'T12:00:00').toDateString(),'shop')
+        ]);
+        if(results[0].meta.changes!==1)return reply({error:'积分不足10分或记录已更新，请刷新后重试'},409);
+    } else {
+        const result=await db.prepare('UPDATE adventures SET state = ?, version = version + 1 WHERE user_id = ? AND version = ?').bind(JSON.stringify(next),user,row.version).run();
+        if(result.meta.changes!==1)return reply({error:'另一台设备已更新记录，请刷新后查看'},409);
+    }
+    return reply({...next,_balance:await balance()});
 }

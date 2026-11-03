@@ -1,3 +1,6 @@
+import { databaseForUser } from './account-databases.mjs';
+import { handleAdventure } from './pokemon-api.mjs';
+
 function json(data, init = {}) {
 	return new Response(JSON.stringify(data), {
 		headers: {
@@ -70,9 +73,22 @@ export default {
 				return ok('');
 			}
 
+			if (url.pathname === "/api/adventure") {
+				return await handleAdventure(request, env);
+			}
+
 			if (url.pathname === "/api/health") {
 				return ok("ok");
 			}
+
+            // All behavior endpoints select the same child's physically separate store.
+            let requestedUser=url.searchParams.get('userId');
+            if(request.method==='POST') {
+                try {requestedUser=(await request.clone().json()).userId;}
+                catch {return json({error:'无效的请求内容'},{status:400});}
+            }
+            try {env={...env,DB:databaseForUser(env,requestedUser)};}
+            catch(e){return json({error:e.message},{status:400});}
 
 			if (url.pathname === "/api/health/db") {
 				try {

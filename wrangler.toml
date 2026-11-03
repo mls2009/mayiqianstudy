@@ -15,3 +15,14 @@ routes = [
 binding = "DB"
 database_name = "my-score-db"
 database_id = "95e14293-8140-4bd4-bd26-7d8f29f0a099" 
+
+# Independent stores for learning, collections and behavior records.
+[[d1_databases]]
+binding = "DB_MAYIQIAN"
+database_name = "pokemon-ma-yi-qian"
+database_id = "21192478-4c2c-4f39-b4bb-8c31be5fac14"
+
+[[d1_databases]]
+binding = "DB_MAYICHU"
+database_name = "pokemon-ma-yi-chu"
+database_id = "89282476-093e-4360-a2ea-d8c6e0aec9df"

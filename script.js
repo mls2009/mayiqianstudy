@@ -98,7 +98,7 @@ let statsFilterType = null; // null | 'positive' | 'negative'
 let lastRenderedDate = null; // 用于跨天检测
 
 // ---- API integration start ----
-const API_BASE = 'https://api.mayichu.top';
+const API_BASE = /^(localhost|127\.0\.0\.1|192\.168\.|10\.)/.test(location.hostname) ? `${location.protocol}//${location.hostname}:8787` : 'https://api.mayichu.top';
 const FIXED_USER_ID = 'default';
 const USE_API = true;
 let cachedRecords = [];
@@ -173,6 +173,7 @@ async function loadRecordsFromAPI() {
 }
 
 async function refreshAllViews() {
+    const requestedUser=currentUser;
 	try {
 		// 一次性获取所有需要的数据
 		const [records, userStats] = await Promise.all([
@@ -180,6 +181,8 @@ async function refreshAllViews() {
 			apiGetUserStats(currentUser || FIXED_USER_ID)
 		]);
 		
+		// A late response must never replace the newly selected child.
+        if(requestedUser!==currentUser)return;
 		// 更新缓存
 		cachedRecords = records;
 		
@@ -647,6 +650,7 @@ function switchTab(tab) {
     const pageMap = {
         'home': 'homePage',
         'stats': 'statsPage',
+        'pokemon': 'pokemonPage',
         'settings': 'settingsPage'
     };
     
@@ -656,6 +660,8 @@ function switchTab(tab) {
     }
     
     currentTab = tab;
+    if (location.hash !== `#${tab}`) history.replaceState(null, '', `#${tab}`);
+    if (tab === 'pokemon') document.dispatchEvent(new Event('pokemon:open'));
     
     // 如果切换到统计页面，渲染统计数据
     if (tab === 'stats') {
@@ -1098,9 +1104,13 @@ function switchUser(userName) {
         return;
     }
     currentUser = userName;
+    cachedRecords=[];
+    updateScoreDisplay({});
+    renderRecords();
     localStorage.setItem('currentUser', currentUser);
     updateUserDisplay();
     refreshAllViews().then(() => {
+        if(currentUser!==userName)return;
         renderRecords();
         updateScore();
         updateRewardCard();
@@ -1116,6 +1126,7 @@ function quickSwitchUser() {
 }
 
 function updateUserDisplay() {
+    document.dispatchEvent(new Event('pokemon:user'));
     // 更新头部标题
     const headerTitle = document.getElementById('headerTitle');
     if (headerTitle) {

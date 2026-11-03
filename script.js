@@ -517,7 +517,7 @@ function updateScore(isPositive = null) {
     // 计算今日得分（统一使用北京时间字符串）
     const today = getBeijingDateString();
     const todayScore = allRecords
-        .filter(record => record.date === today && record.category !== "adjust")
+        .filter(record => record.date === today && record.category !== "adjust" && record.category !== "shop")
         .reduce((sum, record) => sum + (record.score || 0), 0);
     
     // 总得分改为聚合计算
@@ -554,7 +554,7 @@ function updateRewardCard() {
     // 计算今日得分（统一使用北京时间字符串）
     const today = getBeijingDateString();
     const todayScore = allRecords
-        .filter(record => record.date === today && record.category !== "adjust")
+        .filter(record => record.date === today && record.category !== "adjust" && record.category !== "shop")
         .reduce((sum, record) => sum + (record.score || 0), 0);
     
     const rewardCard = document.getElementById('rewardCard');
@@ -577,7 +577,7 @@ function updateRewardCard() {
 
 function checkTodayReward() {
     const today = new Date().toDateString();
-    const todayRecords = getAllRecords().filter(record => record.date === today && record.category !== "adjust");
+    const todayRecords = getAllRecords().filter(record => record.date === today && record.category !== "adjust" && record.category !== "shop");
     const todayScore = todayRecords.reduce((sum, record) => sum + record.score, 0);
     
     if (todayScore >= 5) {

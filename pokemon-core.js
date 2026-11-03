@@ -16,7 +16,8 @@
     const groups=[{key:'literacy',name:'识字',required:0,optional:3},{key:'english',name:'英语',required:1,optional:2}];
     const groupFor=key=>{const group=groups.find(g=>g.key===key);if(!group)throw Error('请选择识字组或英语组');return group;};
     const empty = () => ({days:{}});
-    const freshDay = () => ({tasks:['','','完成8篇英语作业','识字10个'].map(text=>({text,done:false})),encounters:[],claims:{}});
+    const fixedTasks = ['识字5个','完成4篇英语作业','完成8篇英语作业','识字10个'];
+    const freshDay = () => ({tasks:fixedTasks.map(text=>({text,done:false})),encounters:[],claims:{}});
     const copy = state => JSON.parse(JSON.stringify(state));
     const draws = day => day.encounters || (day.encounter?[day.encounter]:[]);
     const legacyClaim = day => !!day&&draws(day).some(e=>!e.group);
@@ -30,7 +31,7 @@
         next.days[date] = day;
         return next;
     }
-    function complete(state, date, index, text) {
+    function complete(state, date, index, text = fixedTasks[index]) {
         if (!Number.isInteger(index) || index < 0 || index > 3 || typeof text !== 'string' || !text.trim() || text.length > 120) throw Error('请先约定具体的学习内容');
         const next = copy(state), day = next.days[date] || freshDay();
         if(claimed(day,groups.find(g=>g.required===index||g.optional===index).key))throw Error('这一组今天的奖励已领取，不能再次领取或补领');
@@ -89,7 +90,7 @@
             (rarity==='all'||p.rarity===Number(rarity))&&(!term||`${p.name} ${p.englishName} ${p.identifier} ${p.id}`.toLowerCase().includes(term))&&
             (status==='all'||(status==='owned'?owned.has(p.id):!owned.has(p.id))));
     }
-    const api={catalog,species:catalog,trainers,rarityNames,category,draws,getPokemon,family,filterCatalog,encountersFor,labels,empty,freshDay,setPlan,complete,pending,groups,claimed,legacyClaim,rewardOptions,odds,poolWeights,claim};
+    const api={catalog,species:catalog,trainers,rarityNames,category,draws,getPokemon,family,filterCatalog,encountersFor,labels,fixedTasks,empty,freshDay,setPlan,complete,pending,groups,claimed,legacyClaim,rewardOptions,odds,poolWeights,claim};
     root.PokemonCore=api;
     if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

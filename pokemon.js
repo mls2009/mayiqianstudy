@@ -2,7 +2,7 @@
 (() => {
     const P = PokemonCore;
     const rarityNames = P.rarityNames;
-    let state = P.empty(), user = '', mode = '', busy = false, generation = 0, filter = 'all', typeFilter = 'all', familyFilter = 'all', rarityFilter = 'all', search = '', dexPage = 0;
+    let state = P.empty(), user = '', mode = '', busy = false, generation = 0, filter = 'all', typeFilter = 'all', familyFilter = 'all', rarityFilter = 'all', search = '', dexPage = 0, view = 'map';
     const page = () => document.getElementById('pokemonPage');
     const today = () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai'}).format(new Date());
     const escape = text => String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -25,10 +25,18 @@
             return await res.json();
         } finally { clearTimeout(timeout); }
     }
+    const viewForHash = () => ({'#expPlan':'study','#expDex':'dex','#expHelp':'help'}[location.hash] || 'map');
+    function navigate(next) {
+        view=next;
+        const hash={map:'#pokemon',study:'#expPlan',dex:'#expDex',help:'#expHelp'}[view];
+        if(location.hash!==hash)window.history.pushState(null,'',hash);
+        render();window.scrollTo(0,0);
+        page().querySelector('h1')?.focus({preventScroll:true});
+    }
     async function load() {
         const ticket = ++generation;
         const who = currentUser;
-        user = who; dexPage=0; filter='all'; busy = true; mode = ''; state = P.empty();
+        user = who; view=viewForHash(); dexPage=0; filter='owned'; busy = true; mode = ''; state = P.empty();
         render();
         try {
             // 后端尚未部署时，本机模式保持独立；不自动合并，以免重抽或覆盖收藏。
@@ -53,36 +61,33 @@
         }
     }
     function render() {
-        const day = state.days[today()] || P.freshDay();
-        const entries = history(), owned = new Set(entries.map(e=>e.pokemonId));
-        const pending = P.pending(state), locked = day.tasks.some(t=>t.done);
-        const taskClaimed=i=>P.claimed(day,P.groups.find(g=>g.required===i||g.optional===i).key);
-        page().innerHTML = `
-            <header class="exp-heading"><div><p class="exp-eyebrow">POKÉMON · 学习探险手记</p><h1>${escape(user || currentUser)}的探索之旅</h1></div><span class="exp-date">${dateLabel(today())}</span></header>
-            <section class="exp-hero"><div class="exp-hero-copy"><span class="exp-tag">每一点发现，都值得记住</span><h2>带着好奇心，<br>遇见新伙伴。</h2><p>读一个故事，认识几个字。<br>把自己的发现，留在这段旅程里。</p><a href="#expPlan" class="exp-link">看看今天的学习约定 ↓</a></div><div class="exp-hero-art">${art(P.catalog[0])}<span class="exp-art-caption">第一站 · 好奇森林</span></div></section>
-            <section class="exp-experience"><div><span class="exp-eyebrow">宝可梦关系图鉴</span><h2>认识每一位伙伴。</h2><p>从进化到不同形态，点开看看它们的故事。</p></div><button class="exp-explore-button" data-action="explore">打开关系图鉴 ↗</button></section>
-            <div class="exp-storage" role="status">${busy?'正在保存或读取手记…':mode==='cloud'?'☁ 手记已保存到云端':mode==='local'?'◉ 仅保存在本机浏览器 · 尚未开启跨设备同步': '暂时无法读取手记，请检查网络后重试'} ${mode==='error'?'<button data-action="retry">重新读取</button>':''}</div>
-            ${mode==='local'?'<details class="exp-local"><summary>保存与备份</summary><p>本机手记不会自动上传；清除浏览器数据会丢失。可以导出备份，并在其他浏览器的本机模式恢复。</p><button data-action="export">导出手记</button><label class="exp-import">恢复备份<input type="file" accept="application/json" id="expImport"></label></details>':''}
-            <section class="exp-panel" id="expPlan"><div class="exp-section-heading"><div><p class="exp-eyebrow">01 / 今天的约定</p><h2>先选内容，再开始</h2></div><span class="exp-small">${day.tasks.filter(t=>t.done).length} 项已记录</span></div>
-                <p class="exp-note">和家长一起约定适合今天的内容。书由你选，顺序也由你定。留空的可选任务就当作休息。</p>
-                <form id="expPlanForm"><div class="exp-task-list">${day.tasks.map((t,i)=>`<div class="exp-task ${t.done?'is-done':''}"><span class="exp-task-number">${t.done?'✓':String(i+1).padStart(2,'0')}</span><label><span>${P.labels[i]} <small>${i<2?'必选':'不必全部完成'}</small></span>${locked?`<p class="exp-task-summary">${escape(t.text||'今天没有安排这一项')}</p>`:`<input aria-label="${P.labels[i]}内容" name="task${i}" value="${escape(t.text)}" maxlength="120" placeholder="${['如：一起认识故事里的汉字','如：读一本自己选的英文绘本','如：回顾昨天遇到的词','如：找一个想知道答案的问题'][i]}" ${locked||busy?'disabled':''}>`}</label>${locked?`<button type="button" data-complete="${i}" ${t.done||taskClaimed(i)||!t.text||busy?'disabled':''}>${taskClaimed(i)?'已领取':t.done?'已完成':'家长确认'}</button>`:''}</div>`).join('')}</div>${!locked?`<button class="exp-button" type="submit" ${busy||mode==='error'?'disabled':''}>保存今天的约定</button><button class="exp-text-button" type="button" data-complete="0" ${!day.tasks[0].text||busy?'disabled':''}>识字已完成，家长确认</button><button class="exp-text-button" type="button" data-complete="1" ${!day.tasks[1].text||busy?'disabled':''}>阅读已完成，家长确认</button>`:'<p class="exp-footnote">今天的约定已锁定，不再临时加量。认真尝试也值得被看见。</p>'}</form>
-            </section>
-            ${renderRewards(pending)}
-            <details class="exp-rules"><summary>给家长：相遇规则与抽取概率</summary><button class="exp-replay" data-action="preview">预览普通球（不消耗机会）</button><button class="exp-replay" data-action="preview-master">预览金色大师球（不消耗机会）</button><p>识字与英语两组每天各领一次。每组必选完成可领1普通球；本组必选与对应可选都完成后，可改领2普通球或1大师球。三个方案互斥，领取后该组按钮显示已领取，不再补领；另一组不受影响。2普通球一次入库，再依次揭晓。马亦谦与马熠初规则相同。</p>${['normal','master'].map(ball=>`<h3>${ball==='normal'?'普通精灵球':'金色大师球'}</h3><table class="exp-odds"><thead><tr><th>类别</th><th>概率</th></tr></thead><tbody>${P.odds(ball).map((chance,i)=>({chance,name:rarityNames[i]})).filter(r=>r.chance>0).sort((a,b)=>b.chance-a.chance).map(r=>`<tr><td>${r.name}</td><td>${r.chance}%</td></tr>`).join('')}</tbody></table>`).join('')}<p>先抽类别，再按权重抽该类伙伴；已拥有形态权重为未拥有的一半，不随数量继续降低。普通球不出传说、幻之和超级进化。普通球的常见名单来自主角团与火箭队的历代伙伴。大师球按实际进化阶段分池，传说、幻之和超级进化各5%。</p><p>约定开始前可编辑，不临时加量。任务不评价孩子的价值，不排名、不扣伙伴、不以连续打卡施压。给自由阅读和休息也留出时间。</p></details>
-            ${renderDex(entries,owned)}
-            <section class="exp-panel"><div class="exp-section-heading"><div><p class="exp-eyebrow">04 / 成长留下的印记</p><h2>我们的探险回忆</h2></div></div>${entries.length?entries.map(e=>{const p=P.getPokemon(e.pokemonId);return `<button class="exp-memory" data-pokemon="${p.id}">${art(p)}<span><strong>与${p.name}相遇</strong><small>${dateLabel(e.date)} 的学习 · ${e.tasks.length} 项发现</small></span><span>↗</span></button>`;}).join(''):'<p class="exp-empty">手记从今天开始。读过的故事、认识的字，都会成为旅程的一部分。</p>'}</section>
-            <footer class="exp-footer">按自己的节奏，世界值得慢慢探索。<small>宝可梦角色归各权利人所有 · <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">图片来源 PokeAPI sprites</a></small></footer>`;
+        const entries=history(),owned=new Set(entries.map(e=>e.pokemonId));
+        const day=state.days[today()]||P.freshDay();
+        const ready=P.groups.filter(g=>P.rewardOptions(day,g.key).length).length;
+        const titles={map:'探险地图',study:'学习森林',dex:'伙伴研究所',help:'家长说明'};
+        page().classList.toggle('exp-map-page',view==='map');
+        page().innerHTML=`<header class="exp-heading exp-view-heading"><div>${view==='map'?`<p class="exp-eyebrow">${escape(user||currentUser)} · ${dateLabel(today())}</p>`:'<button class="exp-back" data-view="map">← 返回地图</button>'}<h1 tabindex="-1">${titles[view]}</h1></div>${view==='map'?'<button class="exp-parent-link" data-view="help" aria-label="家长说明">家长说明 ↗</button>':`<span class="exp-date">${dateLabel(today())}</span>`}</header>
+        ${view==='map'?`<section class="exp-world" aria-label="探险地图，两个地点"><img class="exp-world-art" src="assets/adventure/map.svg" alt="手绘小岛地图，小路连接学习森林和伙伴研究所" width="440" height="580"><button class="exp-place exp-place-forest" data-view="study"><span class="exp-place-pin">01</span><strong>学习森林 <span>→</span></strong><small>${ready?`${ready}组奖励可领取`:P.groups.every(g=>P.claimed(day,g.key))?'今日已领取':'识字 · 英语'}</small></button><button class="exp-place exp-place-lab" data-view="dex"><span class="exp-place-pin">02</span><strong>伙伴研究所 <span>→</span></strong><small>${owned.size}位伙伴 · 图鉴与进化</small></button><span class="exp-map-caption">FOREST ISLAND / 森林小岛</span></section>`:view==='study'?renderRewards(P.pending(state)):view==='dex'?`<button class="exp-network-entry" data-action="explore"><span>进化关系网络</span><span>打开 ↗</span></button>${renderDex(entries,owned)}`:renderParent()}
+        <div class="exp-storage" role="status">${busy?'正在同步…':mode==='cloud'?'☁ 已同步':mode==='local'?'◉ 本机保存':mode==='error'?'暂时无法读取数据':'正在读取…'} ${mode==='error'?'<button data-action="retry">重试</button>':''}</div>`;
+    }
+    function renderParent() {
+        return `<section class="exp-panel exp-rules"><h2>领取规则与抽取概率</h2><button class="exp-replay" data-action="preview">预览普通球（不消耗机会）</button><button class="exp-replay" data-action="preview-master">预览金色大师球（不消耗机会）</button><p>识字与英语两组每天各领一次。每组必选完成可领1普通球；本组必选与对应可选都完成后，可改领2普通球或1大师球。三个方案互斥，领取后该组按钮显示已领取，不再补领；另一组不受影响。2普通球一次入库，再依次揭晓。马亦谦与马熠初规则相同。</p>${['normal','master'].map(ball=>`<h3>${ball==='normal'?'普通精灵球':'金色大师球'}</h3><table class="exp-odds"><thead><tr><th>类别</th><th>概率</th></tr></thead><tbody>${P.odds(ball).map((chance,i)=>({chance,name:rarityNames[i]})).filter(r=>r.chance>0).sort((a,b)=>b.chance-a.chance).map(r=>`<tr><td>${r.name}</td><td>${r.chance}%</td></tr>`).join('')}</tbody></table>`).join('')}<p>先抽类别，再按权重抽该类伙伴；已拥有形态权重为未拥有的一半，不随数量继续降低。普通球不出传说、幻之和超级进化。普通球的常见名单来自主角团与火箭队的历代伙伴。大师球按实际进化阶段分池，传说、幻之和超级进化各5%。</p></section>
+        ${mode==='local'?'<section class="exp-panel exp-local"><h2>保存与备份</h2><p>仅保存在本机，清除浏览器数据会丢失。备份只合并当前账号中不存在的日期。</p><button data-action="export">导出手记</button><label class="exp-import">恢复备份<input type="file" accept="application/json" id="expImport"></label></section>':''}
+        <footer class="exp-footer"><small>地图与场景为原创绘制。宝可梦角色归各权利人所有 · <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">宝可梦图片来源</a></small></footer>`;
     }
     function renderRewards(pending) {
         const dates=[today(),...pending.filter(date=>date!==today())];
-        return `<section class="exp-encounter exp-group-rewards"><div><p class="exp-eyebrow">02 / 分组领取奖励</p><h2>识字一次，英语一次。</h2><p>每组每天领取一次，必选与对应可选奖励互斥。领取后保留灰色「已领取」，另一组仍可独立领取。</p></div>${dates.map(date=>{
+        return `<section class="exp-study">${dates.map(date=>{
             const day=state.days[date]||P.freshDay();
-            return `<div class="exp-reward-date">${dateLabel(date)} 的约定</div>${P.groups.map(group=>{
+            return `${date!==today()?`<h2 class="exp-reward-date">${dateLabel(date)} · 待领取</h2>`:''}<div class="exp-study-groups">${P.groups.map(group=>{
                 const paid=P.claimed(day,group.key),options=P.rewardOptions(day,group.key),disabled=busy||mode==='error';
-                const button=(choice,label,master=false)=>`<button class="exp-button ${master?'exp-master-button':''}" data-action="encounter" data-date="${date}" data-group="${group.key}" data-choice="${choice}" aria-label="${group.name}${choice==='required'?'必选':'可选'}奖励：${paid?'已领取':label}" ${paid||disabled||!options.includes(choice)?'disabled':''}>${paid?'已领取':label}</button>`;
+                const task=(index,optional=false)=>{
+                    const done=day.tasks[index].done,text=done||date!==today()?day.tasks[index].text:P.fixedTasks[index];
+                    return `<div class="exp-study-task"><div class="exp-study-task-label"><small>${optional?'对应可选':'必选'}</small><strong>${escape(text)}</strong></div>${done||paid||date!==today()?`<span class="exp-task-state">${done?'✓ 已完成':'未完成'}</span>`:`<button data-complete="${index}" aria-label="${group.name}${optional?'可选':'必选'}：确认完成" ${disabled?'disabled':''}>确认完成</button>`}</div>`;
+                };
                 const claim=day.claims?.[group.key];
-                return `<section class="exp-reward-group ${paid?'is-claimed':''}" aria-label="${group.name}组每日奖励"><header><h3>${group.name}组</h3><span>${paid?'今日已领取':options.length?'可以领取':'学习进行中'}</span></header><div class="exp-group-option"><strong>必选 · ${group.name}学习</strong><p>${escape(day.tasks[group.required].text||'先约定学习内容')}</p>${button('required','领取1个普通球')}</div><div class="exp-group-option"><strong>对应可选 · ${escape(day.tasks[group.optional].text||'今天不安排')}</strong><p>本组必选与可选都完成后，领取时选择精灵球。</p><button class="exp-button" data-action="choose-reward" data-date="${date}" data-group="${group.key}" aria-label="${group.name}可选奖励：${paid?'已领取':'领取奖励'}" ${paid||disabled||!options.includes('extra-normal')?'disabled':''}>${paid?'已领取':'领取奖励'}</button></div>${paid?`<p class="exp-group-receipt">${P.legacyClaim(day)?'旧版已领取记录保留，不重复发放。':`本组已领取${claim.choice==='master'?'1个大师球':claim.count+'个普通球'}，必选和可选不能再次领取。`}</p>`:''}</section>`;
-            }).join('')}`;
+                return `<section class="exp-reward-group ${paid?'is-claimed':''}" aria-label="${group.name}组每日奖励"><header><h2>${group.name}</h2><span>${paid?'今日已领取':options.length?'可领取':'未领取'}</span></header><div class="exp-group-option">${task(group.required)}<button class="exp-button" data-action="encounter" data-date="${date}" data-group="${group.key}" data-choice="required" aria-label="${group.name}必选奖励：${paid?'已领取':'领取1个普通球'}" ${paid||disabled||!options.includes('required')?'disabled':''}>${paid?'已领取':'领取1个普通球'}</button></div><div class="exp-group-option">${task(group.optional,true)}<button class="exp-button" data-action="choose-reward" data-date="${date}" data-group="${group.key}" aria-label="${group.name}可选奖励：${paid?'已领取':'领取奖励'}" ${paid||disabled||!options.includes('extra-normal')?'disabled':''}>${paid?'已领取':'领取奖励'}</button>${!paid?'<p class="exp-reward-hint">本组两项完成后，可选普通球 ×2 或大师球。</p>':''}</div>${paid?`<p class="exp-group-receipt">${P.legacyClaim(day)?'旧版领取记录已保留':`已领取${claim.choice==='master'?'1个大师球':claim.count+'个普通球'}`}</p>`:''}</section>`;
+            }).join('')}</div>`;
         }).join('')}</section>`;
     }
     function rewardBallIcon(master=false) {
@@ -111,7 +116,7 @@
                     const latest = JSON.parse(localStorage.getItem(storageKey) || '{"days":{}}');
                     const d = body.date;
                     if(body.action==='plan') next=P.setPlan(latest,d,body.texts);
-                    else if(body.action==='complete') next=P.complete(latest,d,body.index,latest.days[d]?.tasks[body.index]?.text);
+                    else if(body.action==='complete') next=P.complete(latest,d,body.index,P.fixedTasks[body.index]);
                     else next=P.claim(latest,d,body.group,body.choice);
                     localStorage.setItem(storageKey,JSON.stringify(next));
                 };
@@ -134,9 +139,9 @@
         const visible=P.filterCatalog({type:typeFilter,family:familyFilter,status:filter,owned,rarity:rarityFilter,query:search});
         const totalPages=Math.max(1,Math.ceil(visible.length/36));dexPage=Math.min(dexPage,totalPages-1);
         const counts=new Map();entries.forEach(e=>counts.set(e.pokemonId,(counts.get(e.pokemonId)||0)+1));
-        return `<section class="exp-panel" id="expDex"><div class="exp-section-heading"><div><p class="exp-eyebrow">03 / 我的伙伴图鉴</p><h2>每位伙伴，一段回忆</h2></div><span class="exp-count">${owned.size}<small> / ${P.catalog.length}</small></span></div>
+        return `<section class="exp-panel" id="expDex"><div class="exp-section-heading"><div><h2>伙伴图鉴</h2></div><span class="exp-count">${owned.size}<small> / ${P.catalog.length}</small></span></div>
         <form id="expSearchForm" class="exp-search"><input name="search" aria-label="搜索宝可梦" placeholder="名字、英文名或编号" value="${escape(search)}"><button type="submit">查找</button></form>
-        <div class="exp-filters" role="group" aria-label="图鉴筛选">${[['all','全部伙伴'],['owned','已经相遇'],['missing','尚未遇见']].map(([k,label])=>`<button data-filter="${k}" aria-pressed="${filter===k}">${label}</button>`).join('')}</div>
+        <div class="exp-filters" role="group" aria-label="图鉴筛选">${[['owned','我的伙伴'],['all','全部图鉴'],['missing','尚未遇见']].map(([k,label])=>`<button data-filter="${k}" aria-pressed="${filter===k}">${label}</button>`).join('')}</div>
         <div class="exp-dex-selects"><label>按抽取分类<select id="expRarityFilter"><option value="all">全部类别</option>${rarityNames.map((name,i)=>`<option value="${i}" ${String(rarityFilter)===String(i)?'selected':''}>${name}</option>`).join('')}</select></label><label>按属性分类<select id="expTypeFilter" aria-label="按属性分类"><option value="all">全部属性</option>${types.map(t=>`<option value="${t}" ${typeFilter===t?'selected':''}>${t}系</option>`).join('')}</select></label><label>按进化家族分类<select id="expFamilyFilter" aria-label="按进化家族分类"><option value="all">全部进化家族</option>${families.map(p=>`<option value="${p.id}" ${String(familyFilter)===String(p.id)?'selected':''}>${p.name}家族</option>`).join('')}</select></label></div>
         <p class="exp-dex-summary">${visible.length} 个形态 · 共 ${entries.length} 次相遇 · 第 ${dexPage+1} / ${totalPages} 页</p>
         <div class="exp-dex">${visible.slice(dexPage*36,(dexPage+1)*36).map(p=>{const count=counts.get(p.id)||0;return `<button class="exp-pokemon ${count?'is-owned':'is-unknown'} rarity-${p.rarity}" data-pokemon="${p.id}" aria-label="${count?p.name+'，相遇'+count+'次':'尚未遇见的'+p.name}"><span class="exp-dex-id">No.${String(p.speciesId).padStart(3,'0')}</span>${art(p)}${count?`<span class="exp-owned-badge" aria-label="已拥有${count}只">${count}</span>`:''}<strong>${p.name}</strong><span class="exp-type">${p.types.join('／')} · ${rarityNames[p.rarity]}</span><span class="exp-catch-count">${count?'相遇 '+count+' 次':'尚未相遇'}</span></button>`;}).join('')||'<p class="exp-note exp-dex-empty">没有符合条件的伙伴，试试其他搜索或分类。</p>'}</div>
@@ -147,7 +152,7 @@
     }
     function renderEncounterHistory(p) {
         const entries=P.encountersFor(state,p.id);
-        return `<section class="exp-encounter-history"><h3>相遇记录 · ${entries.length} 次</h3>${entries.length?`<button class="exp-replay" data-replay="${p.id}">▷ 重温相遇仪式</button>`:''}${entries.length?entries.map((e,i)=>`<div class="exp-detail-memory"><span class="exp-memory-number">第 ${entries.length-i} 次相遇</span><strong>${escape(new Date(e.at).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}))}</strong><p>${e.legacy?'旧版相遇规则 · ':''}${escape(e.method)} · ${dateLabel(e.date)}的约定</p><ul>${e.tasks.map(t=>`<li>${escape(t.text)}</li>`).join('')}</ul></div>`).join(''):'<p class="exp-note">还没有相遇记录，浏览资料不会点亮收藏。</p>'}</section>`;
+        return `<section class="exp-encounter-history"><h3>相遇记录 · ${entries.length} 次</h3>${entries.length?`<button class="exp-replay" data-replay="${p.id}">▷ 重温相遇仪式</button>`:''}${entries.length?entries.map((e,i)=>`<div class="exp-detail-memory"><span class="exp-memory-number">第 ${entries.length-i} 次相遇</span><strong>${escape(new Date(e.at).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}))}</strong><p>${e.legacy?'旧版相遇规则 · ':''}${escape(e.method)} · ${dateLabel(e.date)}的学习</p><ul>${e.tasks.map(t=>`<li>${escape(t.text)}</li>`).join('')}</ul></div>`).join(''):'<p class="exp-note">还没有相遇记录，浏览资料不会点亮收藏。</p>'}</section>`;
     }
     function detail(id) {
         document.getElementById('expDialog').classList.remove('exp-map-dialog');
@@ -210,10 +215,10 @@
         PokemonEffects.play(document.getElementById('expDialog'),{...e,returning:e.duplicateWeight===.5||(e.duplicateWeight===undefined&&P.encountersFor(state,e.pokemonId).length>1)},onView,replay?'replay':'encounter');
     }
     document.addEventListener('DOMContentLoaded',()=>{
-        page().addEventListener('input',e=>{if(e.target.closest('#expPlanForm'))page().querySelectorAll('[data-complete]').forEach(b=>b.disabled=true);});
-        page().addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='expSearchForm'){search=new FormData(e.target).get('search')||'';dexPage=0;render();document.getElementById('expDex').scrollIntoView({block:'start'});return;}if(e.target.id!=='expPlanForm')return;const data=new FormData(e.target),texts=[0,1,2,3].map(i=>data.get('task'+i)||'');if(!texts[0].trim()||!texts[1].trim()){notify('请先填写识字与英语阅读两项必选内容。');return;}mutate({action:'plan',date:today(),texts});});
+        page().addEventListener('submit',e=>{if(e.target.id!=='expSearchForm')return;e.preventDefault();search=new FormData(e.target).get('search')||'';dexPage=0;render();});
         page().addEventListener('click',e=>{
             const b=e.target.closest('button');if(!b)return;
+            if(b.dataset.view){navigate(b.dataset.view);return;}
             if(b.dataset.complete!==undefined) mutate({action:'complete',date:today(),index:Number(b.dataset.complete)});
             if(b.dataset.pokemon)detail(Number(b.dataset.pokemon));
             if(b.dataset.filter){filter=b.dataset.filter;dexPage=0;render();}
@@ -288,7 +293,7 @@
         document.getElementById('homePokemonExplore').onclick=()=>{switchTab('pokemon');window.scrollTo(0,0);};
         const requested=PokemonVisuals.tabForHash(location.hash);
         if(requested!==currentTab)switchTab(requested);
-        window.addEventListener('hashchange',()=>{const tab=PokemonVisuals.tabForHash(location.hash);if(tab!==currentTab)switchTab(tab);});
+        window.addEventListener('hashchange',()=>{const tab=PokemonVisuals.tabForHash(location.hash);if(tab!==currentTab)switchTab(tab);else if(tab==='pokemon'){view=viewForHash();render();window.scrollTo(0,0);}});
         let lastDay=today();
         setInterval(()=>{if(currentTab==='pokemon'&&!busy&&lastDay!==today()){lastDay=today();load();}},60000);
     });

@@ -660,7 +660,7 @@ function switchTab(tab) {
     }
     
     currentTab = tab;
-    if (location.hash !== `#${tab}`) history.replaceState(null, '', `#${tab}`);
+    if (location.hash !== `#${tab}` && !(tab==='pokemon' && PokemonVisuals.tabForHash(location.hash)==='pokemon')) history.replaceState(null, '', `#${tab}`);
     if (tab === 'pokemon') document.dispatchEvent(new Event('pokemon:open'));
     
     // 如果切换到统计页面，渲染统计数据

@@ -41,3 +41,6 @@ test('刷新旧的学习锚点和新动画链接仍然进入宝可梦页面',()=
     assert.equal(V.tabForHash(''),'home');
     assert.equal(V.tabForHash('#unknown'),'home');
 });
+test('研究所和家长说明的深链接保留在探险栏目',()=>{
+ for(const hash of ['#expDex','#expHelp'])assert.equal(V.tabForHash(hash),'pokemon');
+});

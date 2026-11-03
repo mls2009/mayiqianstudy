@@ -289,3 +289,60 @@
 .exp-choice-cancel {min-height:44px;width:100%;border:0;border-radius:12px;background:transparent;color:#6c7c61;font:inherit;cursor:pointer;}
 @media(max-width:700px){.exp-dialog.exp-choice-dialog{max-height:88dvh;padding:18px 18px calc(20px + env(safe-area-inset-bottom))}.exp-ball-choices{gap:12px}.exp-ball-choice-art{width:112px;height:112px}.exp-ball-choice{min-height:190px}}
 @media(max-width:350px){.exp-ball-choices{gap:9px}.exp-ball-choice-art{width:100px;height:100px}.exp-ball-choice strong{font-size:13px}.exp-ball-choice{min-height:174px}}
+
+/* Two-place, hand-drawn island and its focused subpages. */
+#pokemonPage .exp-view-heading {max-width:760px;margin:12px auto 18px;min-height:60px;}
+.exp-view-heading h1 {font-size:28px;outline:none;letter-spacing:1px;}
+.exp-view-heading .exp-eyebrow {font-size:11px;letter-spacing:1px;margin:0 0 7px;}
+.exp-parent-link,.exp-back {border:0;background:none;color:#526c5d;min-height:44px;padding:8px 0;font-size:12px!important;}
+.exp-parent-link {border-bottom:1px solid #bbccae;min-height:36px;white-space:nowrap;}
+.exp-back {display:block;text-align:left;padding-top:0;margin-bottom:3px;min-height:32px;}
+.exp-world {position:relative;width:100%;max-width:440px;height:max(300px,calc(100dvh - 225px - env(safe-area-inset-bottom)));margin:0 auto;isolation:isolate;overflow:hidden;border-radius:28px;}
+.exp-world-art {display:block;width:100%;height:100%;object-fit:cover;object-position:50% 50%;border-radius:28px;box-shadow:0 14px 40px #3657430c;}
+#pokemonPage .exp-place {position:absolute;z-index:1;text-align:left;background:#fffcf0;box-shadow:0 5px 0 #69815b27,0 8px 20px #315a3f17;border:1px solid #b9c6a2;border-radius:13px;padding:11px 15px 10px;color:#294d3c;min-width:155px;transition:transform .18s,box-shadow .18s;}
+#pokemonPage .exp-place:hover {transform:translateY(-3px);box-shadow:0 7px 0 #69815b27,0 12px 22px #315a3f20;}
+#pokemonPage .exp-place:active {transform:translateY(2px);}
+.exp-place::before {content:'';position:absolute;left:26px;top:-7px;width:12px;height:12px;background:#fffcf0;border-top:1px solid #b9c6a2;border-left:1px solid #b9c6a2;transform:rotate(45deg);}
+.exp-place-forest {left:11%;top:41%;}
+.exp-place-lab {right:6%;top:74%;}
+.exp-place strong {display:block;font-family:'Songti SC','STSong',serif;font-size:20px;letter-spacing:.5px;white-space:nowrap;}
+.exp-place strong>span {font-family:serif;font-size:16px;margin-left:10px;color:#9b7950;}
+.exp-place small {display:block;color:#7b826b;font-size:10px;line-height:1.5;margin-top:5px;}
+.exp-place-pin {position:absolute;right:8px;top:-17px;background:#3e7057;color:#fff7df;border:3px solid #e3eccb;box-shadow:0 2px 4px #38563c1a;display:grid;place-items:center;border-radius:50%;width:29px;height:29px;font-size:9px;letter-spacing:1px;}
+.exp-place-lab .exp-place-pin {background:#b37458;border-color:#e7e2be;}
+.exp-map-caption {position:absolute;left:9%;bottom:5%;font-size:8px;letter-spacing:1.8px;color:#657f66;writing-mode:vertical-rl;}
+#pokemonPage.exp-map-page .exp-storage {max-width:440px;margin:12px auto 0;padding:0;text-align:right;font-size:10px;color:#87947d;}
+.exp-study,.exp-network-entry,#pokemonPage>.exp-panel,#pokemonPage>.exp-rules {max-width:760px;margin-left:auto;margin-right:auto;}
+.exp-study-groups {display:grid;gap:16px;}
+.exp-study .exp-reward-group {margin:0;background:#fffcf4;border:1px solid #d7dfcb;border-radius:20px;padding:18px;}
+.exp-study .exp-reward-group>header {margin-bottom:8px;}
+.exp-study .exp-reward-group>header h2 {font-family:'Songti SC','STSong',serif;font-size:25px;color:#345744;margin:0;}
+.exp-study .exp-reward-group>header>span {font-size:10px;background:#eaf0dc;border-radius:20px;padding:5px 9px;}
+.exp-study .exp-group-option {padding:12px 0 0;border-top:1px solid #e6e9da;margin-top:12px;}
+.exp-study-task {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px;}
+.exp-study-task-label small {display:block;font-size:10px;color:#7d8c74;margin-bottom:5px;}
+.exp-study-task-label strong {display:block;font-size:16px;font-weight:600;line-height:1.5;}
+.exp-study-task>button {flex-shrink:0;min-height:44px;border:1px solid #9caf88;background:#eff3e5;border-radius:10px;color:#375d44;font-size:12px!important;padding:8px 11px;}
+.exp-study .exp-button {width:100%;min-height:44px;margin:0;border-radius:11px;font-size:13px;}
+.exp-study .exp-button:disabled {background:#dce3d1;color:#617453;opacity:.7;}
+.exp-reward-hint {font-size:10px!important;line-height:1.6;margin:8px 0 0!important;color:#8a8f7b!important;}
+.exp-study .exp-group-receipt {margin-bottom:0;font-size:11px;}
+.exp-study .exp-reward-date {font-size:14px;margin:22px 0 12px;}
+.exp-network-entry {display:flex;width:100%;justify-content:space-between;align-items:center;background:#e6edde;border:1px solid #cedbc4;border-radius:13px;color:#3b5c46;min-height:52px;padding:12px 16px;margin-bottom:16px;font-size:13px!important;}
+#pokemonPage .exp-rules {margin-top:12px;}
+#pokemonPage .exp-rules h2,#pokemonPage .exp-local h2 {font-size:20px;font-family:'Songti SC','STSong',serif;margin:0 0 16px;}
+#pokemonPage .exp-rules>p {font-size:12px;line-height:1.9;}
+#expMessage:not(:empty) {position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:10000;background:#294d3e;color:#fff9e7;padding:12px 18px;border-radius:12px;max-width:90vw;width:max-content;font-size:13px;box-shadow:0 4px 20px #294d3e33;}
+@media(min-width:720px) {.exp-study-groups {grid-template-columns:1fr 1fr;align-items:start;}.exp-world {max-width:600px;}.exp-place-forest {left:12%;}.exp-place-lab {right:8%;}}
+@media(max-width:360px) {#pokemonPage {padding-left:12px;padding-right:12px;}.exp-place strong {font-size:18px;}#pokemonPage .exp-place {min-width:143px;padding:10px 12px;}.exp-view-heading h1 {font-size:25px;}.exp-study .exp-reward-group {padding:15px;}.exp-study-task-label strong {font-size:15px;}}
+@media(prefers-reduced-motion:reduce) {#pokemonPage .exp-place {transition:none;}}
+.exp-study .exp-reward-group>header>span {color:#5e7654;}
+.exp-study .exp-group-option>.exp-reward-hint {color:#778169!important;}
+.exp-study .exp-group-receipt {color:#5e7654!important;}
+.exp-study .exp-reward-date {color:#5e7654;}
+.exp-place::after {content:'';position:absolute;left:-14px;right:-12px;top:-100px;height:100px;}
+.exp-task-state {flex-shrink:0;font-size:12px;color:#718466;}
+.exp-place-lab::after {left:70px;right:0;top:-80px;height:80px;}
+#pokemonPage:not(.exp-map-page) .exp-view-heading {position:sticky;top:0;z-index:4;background:#f2f2f6f5;padding:8px 0;backdrop-filter:blur(10px);}
+
+#pokemonPage.exp-map-page {padding-bottom:0;}

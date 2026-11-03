@@ -24,7 +24,7 @@
         return {nodes,edges,maxDepth,width,height,rings:Array.from({length:maxDepth},(_,i)=>(i+1)*155*scale)};
     }
     function tabForHash(hash) {
-        return {'#pokemon':'pokemon','#expPlan':'pokemon','#animation':'pokemon','#home':'home','#stats':'stats','#settings':'settings'}[hash] || 'home';
+        return {'#pokemon':'pokemon','#expPlan':'pokemon','#expDex':'pokemon','#expHelp':'pokemon','#animation':'pokemon','#home':'home','#stats':'stats','#settings':'settings'}[hash] || 'home';
     }
     root.PokemonVisuals={radialLayout,tabForHash};
     if(typeof module!=='undefined')module.exports=root.PokemonVisuals;

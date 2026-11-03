@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 580" fill="none">
+<defs>
+ <linearGradient id="land" x2=".8" y2="1"><stop stop-color="#e1edbf"/><stop offset="1" stop-color="#c3dba8"/></linearGradient>
+ <linearGradient id="leaf" x2=".8" y2="1"><stop stop-color="#80ae76"/><stop offset="1" stop-color="#3c785c"/></linearGradient>
+ <linearGradient id="roof" x2="1" y2="1"><stop stop-color="#db8467"/><stop offset="1" stop-color="#ae5849"/></linearGradient>
+ <pattern id="water" width="48" height="35" patternUnits="userSpaceOnUse"><path d="M5 15q8 4 16 0m12 16h9" stroke="#fff" stroke-opacity=".24" stroke-width="2" stroke-linecap="round"/></pattern>
+ <filter id="shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0" dy="5" stdDeviation="3" flood-color="#325e47" flood-opacity=".18"/></filter>
+ <g id="tree"><ellipse cy="29" rx="19" ry="7" fill="#51805d" opacity=".16"/><path d="M0 9v23" stroke="#7c7951" stroke-width="5" stroke-linecap="round"/><path d="M-3-38C-25-31-29-7-18 5c-12 16 4 27 18 21C17 33 31 17 21 5 31-10 20-33-3-38Z" fill="url(#leaf)"/><path d="M-13-16q-4 9 0 17M-6-27l3-3" stroke="#b3d599" stroke-width="3" stroke-linecap="round" opacity=".6"/></g>
+ <g id="pine"><path d="M0 7v25" stroke="#87805b" stroke-width="4"/><path d="m0-40-22 37h10l-17 27h57L12-3h10Z" fill="#4c8169"/><path d="m0-32-15 26h7L-20 15H1Z" fill="#74a383"/></g>
+ <g id="grass" stroke="#739d6b" stroke-width="1.7" stroke-linecap="round"><path d="m-4 0-2-5M0 0l1-7m3 7 3-4"/></g>
+ <g id="flower"><path d="M0 0v8" stroke="#749562"/><circle cx="0" cy="0" r="4" fill="#fff6d2"/><circle r="1.5" fill="#dca65c"/></g>
+</defs>
+<!-- Original hand-drawn landscape: all scenery is local SVG. -->
+<rect width="440" height="580" rx="30" fill="#dbece6"/>
+<rect width="440" height="580" rx="30" fill="url(#water)"/>
+<path d="M45 77C82 30 164 49 209 35c73-23 166 19 183 79 29 40 1 97 10 152 16 64 22 115-10 163-17 64-78 108-146 109-61 19-133 4-170-33C22 480 7 432 26 376 6 329 28 294 32 252 13 202 13 117 45 77Z" fill="#9db69a"/>
+<path d="M45 65C82 18 164 37 209 23c73-23 166 19 183 79 29 40 1 97 10 152 16 64 22 115-10 163-17 64-78 108-146 109-61 19-133 4-170-33C22 468 7 420 26 364 6 317 28 282 32 240 13 190 13 105 45 65Z" fill="url(#land)" stroke="#f8f2d5" stroke-width="5"/>
+<path d="M31 338c44-35 72-17 107-38 43-25 23-73 65-95s82 1 110-21 38-57 87-60" stroke="#b0caa0" stroke-width="40" stroke-linecap="round"/>
+<path d="M29 337c44-35 72-17 107-38 43-25 23-73 65-95s82 1 110-21 38-57 87-60" stroke="#a4d0ca" stroke-width="25" stroke-linecap="round"/>
+<path d="M37 335c41-29 70-14 100-35m68-90c41-17 72 0 102-21" stroke="#e3f1de" stroke-width="2" stroke-linecap="round"/>
+<!-- Paths and a little timber bridge. -->
+<path d="M135 216c-12 42 30 53 83 67s28 41 40 67 47 28 47 69" stroke="#b5bd8f" stroke-width="27" stroke-linecap="round"/>
+<path d="M135 216c-12 42 30 53 83 67s28 41 40 67 47 28 47 69" stroke="#f3dfb0" stroke-width="22" stroke-linecap="round"/>
+<path d="M135 216c-12 42 30 53 83 67s28 41 40 67 47 28 47 69" stroke="#fff3ce" stroke-width="2" stroke-dasharray="2 10" stroke-linecap="round"/>
+<g transform="translate(171 257) rotate(26)"><rect x="-24" y="-19" width="48" height="40" rx="3" fill="#ae9165"/><path d="M-22-12h44m-44 9h44m-44 9h44m-44 9h44" stroke="#d4b887" stroke-width="5"/><path d="M-24-22v46m48-46v46" stroke="#816c4f" stroke-width="4"/></g>
+<!-- Forest grove and reading clearing. -->
+<ellipse cx="127" cy="181" rx="77" ry="56" fill="#b2cf96"/>
+<use href="#tree" transform="translate(74 121) scale(1.08)"/><use href="#pine" transform="translate(120 94)"/><use href="#tree" transform="translate(159 109) scale(1.15)"/><use href="#tree" transform="translate(199 145) scale(.95)"/>
+<use href="#tree" transform="translate(48 180) scale(.85)"/><use href="#pine" transform="translate(84 204) scale(.85)"/>
+<g filter="url(#shadow)"><path d="M103 191q21-13 34-4 17-9 35 3v29q-19-9-35-2-16-8-34 2Z" fill="#c6a26b"/><path d="M103 185q20-10 34-1 15-9 35 1v28q-19-8-35-1-16-7-34 1Z" fill="#fff8dc" stroke="#d7c495" stroke-width="1.5"/><path d="M137 184v28m-27-20q12-4 20 0m-20 7q12-4 20 0m14-7q10-4 20 0m-20 7q10-4 20 0" stroke="#b8bf91" stroke-width="1.5" stroke-linecap="round"/></g>
+<use href="#tree" transform="translate(183 215) scale(.72)"/>
+<!-- Research house with glass conservatory and ball emblem. -->
+<ellipse cx="306" cy="407" rx="76" ry="24" fill="#9ebd8b" opacity=".6"/>
+<g filter="url(#shadow)">
+<path d="M248 341h110v65H248Z" fill="#fff2d2" stroke="#c9b997" stroke-width="2"/>
+<path d="M358 342l23 15v47l-23 2Z" fill="#dbcfac"/>
+<path d="m238 343 65-47 63 47Z" fill="url(#roof)" stroke="#a86650" stroke-width="2" stroke-linejoin="round"/>
+<path d="m303 296 26-6 57 54-20-1Z" fill="#a95d4b"/><path d="M335 306v-22h13v32" fill="#e2ccb0"/>
+<path d="M243 345h120" stroke="#fff4d6" stroke-width="5"/>
+<rect x="291" y="367" width="25" height="39" rx="12" fill="#5e8372"/><path d="M304 372v33" stroke="#a9be9f"/><circle cx="310" cy="390" r="1.7" fill="#eedba7"/>
+<g fill="#a0c9bc" stroke="#a39777" stroke-width="2"><rect x="259" y="359" width="20" height="24" rx="3"/><rect x="329" y="359" width="19" height="24" rx="3"/></g>
+<path d="M269 360v22m-9-11h18m60-11v22m-8-11h17" stroke="#fff4d6" stroke-width="2"/>
+<circle cx="303" cy="331" r="12" fill="#fff8e3" stroke="#bd9a6f" stroke-width="2"/><path d="M291 331a12 12 0 0 1 24 0Z" fill="#ce7b60"/><path d="M291 331h24" stroke="#7d7860" stroke-width="2"/><circle cx="303" cy="331" r="4" fill="#fff8e3" stroke="#7d7860" stroke-width="2"/>
+<path d="M282 410h44m-48 6h52" stroke="#e4c993" stroke-width="5" stroke-linecap="round"/>
+</g>
+<use href="#tree" transform="translate(393 363) scale(.75)"/><use href="#pine" transform="translate(224 400) scale(.8)"/>
+<!-- Orchard, flowers, stepping stones, compass and small shore details. -->
+<use href="#tree" transform="translate(78 420)"/><use href="#tree" transform="translate(113 448) scale(.7)"/>
+<use href="#pine" transform="translate(335 95) scale(.65)"/><use href="#tree" transform="translate(292 79) scale(.65)"/>
+<g fill="#b6c89b"><ellipse cx="99" cy="334" rx="18" ry="9"/><ellipse cx="348" cy="250" rx="26" ry="12"/></g>
+<use href="#grass" x="70" y="298"/><use href="#grass" x="305" y="253"/><use href="#grass" x="227" y="119"/><use href="#grass" x="166" y="404"/><use href="#grass" x="352" y="494"/>
+<use href="#flower" x="91" y="285"/><use href="#flower" x="101" y="292"/><use href="#flower" x="341" y="272"/><use href="#flower" x="351" y="278"/><use href="#flower" x="151" y="467"/><use href="#flower" x="162" y="472"/>
+<g fill="#b1b9a0" stroke="#899c86" stroke-width="1"><ellipse cx="54" cy="485" rx="9" ry="5"/><ellipse cx="69" cy="494" rx="6" ry="4"/><ellipse cx="379" cy="182" rx="8" ry="5"/></g>
+<g transform="translate(371 47)" stroke="#6a9282" stroke-width="1.2"><path d="M0-13v26m-13-13h26"/><path d="M0-10 4 0 0-3-4 0Z" fill="#6a9282"/><text y="-18" text-anchor="middle" stroke="none" fill="#6a9282" font-family="serif" font-size="10">N</text></g>
+<path d="M39 44q5-8 11 0 6-8 11 0m188 504q5-8 11 0 6-8 11 0" stroke="#91b3a5" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

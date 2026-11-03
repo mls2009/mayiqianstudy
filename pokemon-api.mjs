@@ -25,7 +25,7 @@ export async function handleAdventure(request, env) {
         if (typeof body.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.date)) throw Error('无效日期');
         if (body.action !== 'encounter' && body.date !== today) throw Error('只能记录今天的学习');
         if (body.action === 'plan') next = P.setPlan(state,body.date,body.texts);
-        else if (body.action === 'complete') next = P.complete(state,body.date,body.index,state.days[body.date]?.tasks[body.index]?.text);
+        else if (body.action === 'complete') next = P.complete(state,body.date,body.index,P.fixedTasks[body.index]);
         else if (body.action === 'encounter') {
             const random = new Uint32Array(4);
             crypto.getRandomValues(random);

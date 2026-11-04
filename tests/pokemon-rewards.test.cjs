@@ -3,8 +3,8 @@ const date='2026-11-03';
 function ready(extra=false){let s=P.setPlan(P.empty(),date,['识字故事','英语绘本','完成8篇英语作业','识字10个']);for(const i of extra?[0,1,2,3]:[0,1])s=P.complete(s,date,i,s.days[date].tasks[i].text);return s;}
 const draw=(s,d,roll=0,pick=0,at,ball='normal')=>P.claim(s,d,ball==='master'?'english':'literacy',ball==='master'?'master':'required',[[roll,pick]],at);
 test('默认可选内容可编辑，任一组必选独立就绪',()=>{
- assert.deepEqual(P.freshDay().tasks.slice(2).map(t=>t.text),['完成8篇英语作业','识字10个']);
- const s=ready();for(const group of P.groups)assert.deepEqual(P.rewardOptions(s.days[date],group.key),['required']);
+ assert.deepEqual(P.freshDay().tasks.slice(2,4).map(t=>t.text),['完成8篇英语作业','识字10个']);
+ const s=ready();for(const group of P.groups.filter(g=>g.key!=='math'))assert.deepEqual(P.rewardOptions(s.days[date],group.key),['required']);
 });
 test('普通球严格排除传说幻之和超级进化；大师球后三档各5%，其余55/30',()=>{
  assert.deepEqual(P.odds('normal'),[20,50,20,10,0,0,0]);assert.deepEqual(P.odds('master'),[0,0,55,30,5,5,5]);

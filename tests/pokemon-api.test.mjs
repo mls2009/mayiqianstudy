@@ -67,3 +67,14 @@ test('扣分写入失败时整笔购买回滚，不发石头也不扣积分',asy
  await assert.rejects(handle(request('POST',{action:'buy',date:today,type:'电',operationId:'rollback1'}),env));
  const s=await state(env);assert.equal(s._balance,15);assert.equal(s.stones?.['电']||0,0);
 });
+test('两账号数学可选翻倍领大师球，数学与识字英语互不锁定',async()=>{
+ const env=envs();
+ for(const user of ['马亦谦','马熠初']){
+  for(const index of [4,5])assert.equal((await handle(request('POST',{action:'complete',date:today,index},user),env)).status,200);
+  assert.equal((await claim(env,'math','master',user)).status,200);
+  assert.equal((await claim(env,'math','extra-normal',user)).status,400);
+  assert.equal((await handle(request('POST',{action:'complete',date:today,index:0},user),env)).status,200);
+  assert.equal((await claim(env,'literacy','required',user)).status,200);
+  const s=await state(env,user);assert.equal(s.days[today].claims.math.count,1);assert.equal(s.days[today].encounters.length,2);
+ }
+});

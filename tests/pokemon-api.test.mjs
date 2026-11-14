@@ -78,3 +78,11 @@ test('两账号数学可选翻倍领大师球，数学与识字英语互不锁�
   const s=await state(env,user);assert.equal(s.days[today].claims.math.count,1);assert.equal(s.days[today].encounters.length,2);
  }
 });
+test('超进化石20分买入原价卖出，不会重复退款或超卖',async()=>{
+ const env=envs();await env.DB_MAYIQIAN.prepare("INSERT INTO records(id,user_id,score) VALUES ('seed','马亦谦',25)").run();
+ const trade=(action,operationId,type='超进化')=>handle(request('POST',{action,date:today,type,operationId}),env);
+ assert.equal((await trade('buy','super-buy')).status,200);let s=await state(env);assert.equal(s._balance,5);assert.equal(s.stones['超进化'],1);
+ assert.equal((await trade('buy','super-poor')).status,409);
+ assert.equal((await trade('sell','super-sell')).status,200);s=await state(env);assert.equal(s._balance,25);assert.equal(s.stones['超进化'],0);
+ assert.equal((await trade('sell','super-sell')).status,400);assert.equal((await trade('sell','super-again')).status,400);assert.equal((await state(env))._balance,25);
+});

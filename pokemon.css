@@ -385,3 +385,4 @@
 @keyframes exp-evolve-spark {0%{opacity:0;transform:rotate(var(--angle)) translateY(-35px)}50%{opacity:.8}100%{opacity:0;transform:rotate(var(--angle)) translateY(-145px)}}
 @media(max-width:350px){.exp-evolve-stage{height:250px}.exp-evolve-source img,.exp-evolve-target img{width:180px;height:180px}}
 @media(prefers-reduced-motion:reduce){.exp-evolve-dialog *{animation:none!important}}
+.exp-shop-item .exp-sell-stone {background:#f0dfc3;color:#775537;border:1px solid #d9bf97;}

@@ -74,13 +74,13 @@
         return `<svg viewBox="0 0 100 100" aria-hidden="true"><ellipse cx="50" cy="88" rx="28" ry="6" fill="#183b291c"/><path d="M26 25 56 10 80 34 73 72 42 88 18 61Z" fill="${stone.color}" stroke="#ffffff80" stroke-width="2"/><path d="m26 25 24 15 6-30M50 40l30-6M50 40l-8 48M50 40 18 61m32-21 23 32" fill="none" stroke="#fff" stroke-opacity=".48" stroke-width="2"/><path d="m36 26 7 10m-4-2 10-6" stroke="#fff9d6" stroke-width="3" stroke-linecap="round"/></svg>`;
     }
     function renderShop() {
-        return `<section class="exp-shop"><div class="exp-shop-counter"><span>FOREST MART</span><h2>宝可梦商店</h2><p>进化石 · 每颗10分</p><strong>可用积分 ${mode==='cloud'?state._balance??'…':'—'}</strong></div>${mode!=='cloud'?'<p class="exp-note">本机预览不扣首页积分。请在云端模式购买，石头和伙伴会随账号保存。</p>':''}<div class="exp-shop-shelves">${P.stones.map(stone=>`<article class="exp-shop-item">${stoneArt(stone)}<h3>${stone.name}</h3><small>${stone.type}属性 · 已有 ${state.stones?.[stone.type]||0}</small><button data-buy-stone="${stone.type}" ${busy||mode!=='cloud'||!(state._balance>=10)?'disabled':''}>购买 · 10分</button><button class="exp-use-stone" data-use-stone="${stone.type}" ${busy||!(state.stones?.[stone.type]>0)?'disabled':''}>使用进化石</button></article>`).join('')}</div><p class="exp-note">按进化后伙伴的属性选择石头，只能沿图鉴中的后续进化路线前进。一颗石头进化一只，不含超级进化。</p></section>`;
+        return `<section class="exp-shop"><div class="exp-shop-counter"><span>FOREST MART</span><h2>宝可梦商店</h2><p>属性进化石10分 · 超进化石20分</p><strong>可用积分 ${mode==='cloud'?state._balance??'…':'—'}</strong></div>${mode!=='cloud'?'<p class="exp-note">本机预览不扣首页积分。请在云端模式购买，石头和伙伴会随账号保存。</p>':''}<div class="exp-shop-shelves">${P.stones.map(stone=>`<article class="exp-shop-item">${stoneArt(stone)}<h3>${stone.name}</h3><small>${stone.type==='超进化'?'特殊进化':stone.type+'属性'} · 已有 ${state.stones?.[stone.type]||0}</small><button data-buy-stone="${stone.type}" ${busy||mode!=='cloud'||!(state._balance>=stone.price)?'disabled':''}>购买 · ${stone.price}分</button><button class="exp-sell-stone" data-sell-stone="${stone.type}" ${busy||mode!=='cloud'||!(state.stones?.[stone.type]>0)?'disabled':''}>卖出 · +${stone.price}分</button><button class="exp-use-stone" data-use-stone="${stone.type}" ${busy||!(state.stones?.[stone.type]>0)?'disabled':''}>使用进化石</button></article>`).join('')}</div><p class="exp-note">按进化后伙伴的属性选择石头，只能沿图鉴中的后续进化路线前进。一颗石头进化一只。超进化石也支持图鉴中关联的超级进化与特殊形态。</p></section>`;
     }
     function shopDialog(type,buy=false) {
-        const stone=P.stones.find(s=>s.type===type),dialog=document.getElementById('expDialog');
+        const stone=P.stones.find(s=>s.type===type),dialog=document.getElementById('expDialog'),sell=buy==='sell';
         dialog.classList.remove('exp-map-dialog','exp-ceremony','exp-choice-dialog');
         const choices=P.copies(state).flatMap(c=>P.evolutionTargets(c.pokemonId,type).map(p=>({c,p})));
-        dialog.innerHTML=`<button class="exp-dialog-close" aria-label="关闭">×</button><div class="exp-stone-preview">${stoneArt(stone)}</div><h2>${buy?'购买':'使用'}${stone.name}</h2>${buy?`<p>从首页总积分扣除10分，获得1颗${stone.name}。</p><button class="exp-button" data-confirm-buy="${type}">确认购买 · 10分</button>`:`<p>库存 ${state.stones?.[type]||0} 颗 · 选择要进化的那一只</p>${choices.length?choices.map(({c,p})=>`<button class="exp-evolve-option" data-evolve-copy="${c.id}" data-evolve-to="${p.id}" data-evolve-type="${type}">${art(P.getPokemon(c.pokemonId))}<span>${P.getPokemon(c.pokemonId).name} → ${p.name}<small>${dateLabel(c.date)} 获得 · 第${Number(c.id.split(':')[1])+1}只</small></span>${art(p)}</button>`).join(''):'<p>暂时没有可使用这颗石头的伙伴。</p>'}`}`;
+        dialog.innerHTML=`<button class="exp-dialog-close" aria-label="关闭">×</button><div class="exp-stone-preview">${stoneArt(stone)}</div><h2>${sell?'卖出':buy?'购买':'使用'}${stone.name}</h2>${buy?`<p>${sell?'卖出1颗'+stone.name+'，返还'+stone.price+'分到首页总积分。':'从首页总积分扣除'+stone.price+'分，获得1颗'+stone.name+'。'}</p><button class="exp-button" data-confirm-${sell?'sell':'buy'}="${type}">确认${sell?'卖出':'购买'} · ${stone.price}分</button>`:`<p>库存 ${state.stones?.[type]||0} 颗 · 选择要进化的那一只</p>${choices.length?choices.map(({c,p})=>`<button class="exp-evolve-option" data-evolve-copy="${c.id}" data-evolve-to="${p.id}" data-evolve-type="${type}">${art(P.getPokemon(c.pokemonId))}<span>${P.getPokemon(c.pokemonId).name} → ${p.name}<small>${dateLabel(c.date)} 获得 · 第${Number(c.id.split(':')[1])+1}只</small></span>${art(p)}</button>`).join(''):'<p>暂时没有可使用这颗石头的伙伴。</p>'}`}`;
         dialog.dataset.shopUser=user;dialog.dataset.shopGeneration=generation;
         if(!dialog.open)dialog.showModal();dialog.scrollTop=0;
     }
@@ -153,7 +153,7 @@
             }
             if(ticket!==generation) return;
             state=next; render();
-            if(body.action==='buy'){notify('已购买，首页已扣除10分');await refreshAllViews();}
+            if(body.action==='buy'||body.action==='sell'){const stone=P.stones.find(s=>s.type===body.type);notify(body.action==='sell'?'已卖出，返还'+stone.price+'分':'已购买，扣除'+stone.price+'分');await refreshAllViews();}
             if(body.action==='evolve')showEvolution(state.evolutions.at(-1));
             if(body.action==='encounter') showClaim(P.draws(state.days[body.date]).filter(e=>e.group===body.group));
         } catch(e) {
@@ -249,6 +249,7 @@
         page().addEventListener('submit',e=>{if(e.target.id!=='expSearchForm')return;e.preventDefault();search=new FormData(e.target).get('search')||'';dexPage=0;render();});
         page().addEventListener('click',e=>{
             const b=e.target.closest('button');if(!b)return;
+            if(b.dataset.sellStone){shopDialog(b.dataset.sellStone,'sell');return;}
             if(b.dataset.buyStone){shopDialog(b.dataset.buyStone,true);return;}
             if(b.dataset.useStone){shopDialog(b.dataset.useStone);return;}
             if(b.dataset.view){navigate(b.dataset.view);return;}
@@ -292,11 +293,11 @@
         dialog.addEventListener('change',e=>{if(e.target.id==='expMapPokemon')showEvolutionMap(Number(e.target.value),true);});
         dialog.addEventListener('keydown',e=>{const node=e.target.closest('[data-evolution]');if(node&&node.tagName.toLowerCase()==='g'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();if(dialog.classList.contains('exp-map-dialog'))showEvolutionMap(Number(node.dataset.evolution),true);else detail(Number(node.dataset.evolution));}});
         dialog.addEventListener('click',async e=>{
-            const purchase=e.target.closest('[data-confirm-buy]'),evolutionChoice=e.target.closest('[data-evolve-copy]');
+            const purchase=e.target.closest('[data-confirm-buy],[data-confirm-sell]'),evolutionChoice=e.target.closest('[data-evolve-copy]');
             if(purchase||evolutionChoice){
                 if(evolutionChoice)PokemonEffects.unlock();
                 if(busy||dialog.dataset.shopUser!==user||dialog.dataset.shopGeneration!==String(generation))return;
-                const body=purchase?{action:'buy',date:today(),type:purchase.dataset.confirmBuy,operationId:crypto.randomUUID()}:{action:'evolve',date:today(),copyId:evolutionChoice.dataset.evolveCopy,to:Number(evolutionChoice.dataset.evolveTo),type:evolutionChoice.dataset.evolveType};
+                const body=purchase?{action:purchase.dataset.confirmSell?'sell':'buy',date:today(),type:purchase.dataset.confirmSell||purchase.dataset.confirmBuy,operationId:crypto.randomUUID()}:{action:'evolve',date:today(),copyId:evolutionChoice.dataset.evolveCopy,to:Number(evolutionChoice.dataset.evolveTo),type:evolutionChoice.dataset.evolveType};
                 const closed=new Promise(resolve=>dialog.addEventListener('close',resolve,{once:true}));dialog.close();await closed;
                 if(dialog.dataset.shopUser===user)mutate(body);return;
             }
